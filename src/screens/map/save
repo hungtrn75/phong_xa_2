@@ -1,0 +1,149 @@
+<MapboxGL.MapView
+        ref={map}
+        style={styles.map}
+        pitchEnabled={false}
+        styleURL={MapboxGL.StyleURL.Light}
+        logoEnabled={false}
+        onPress={_onMapPress}
+        // onRegionDidChange={async () => {
+        //   const zoom = await map?.current.getZoom();
+        //   console.log(zoom);
+        // }}
+
+        onDidFinishRenderingFrameFully={onMapRendered}>
+        <MapboxGL.UserLocation visible={true} />
+        <MapboxGL.Camera
+          ref={camera}
+          zoomLevel={initCamera.zoomLevel}
+          animationMode="flyTo"
+          followUserLocation={false}
+          maxZoomLevel={18}
+          centerCoordinate={initCamera.centerCoordinate}
+        />
+
+        {baseMap[activeTitle].type === 'raster' ? renderTile1() : renderTile2()}
+
+        {annotations.coordinates.map((el: any, index: number) => (
+          <MapboxGL.PointAnnotation
+            id={`point_annotation${index}`}
+            key={`point_annotation${index}`}
+            draggable={true}
+            onDragEnd={(_) => {
+              console.log('drag');
+            }}
+            // selected={index === annotations.activeIndex}
+            onSelected={(_) => {
+              console.log('selected');
+
+              setAnnitation({
+                ...annotations,
+                activeIndex: index,
+              });
+            }}
+            onDeselected={(e) => {
+              console.log(e);
+            }}
+            coordinate={el}
+          />
+        ))}
+        <MapboxGL.Animated.ShapeSource id="shapeSourceTools" shape={layer}>
+          {mode === 'polygon' ? (
+            <MapboxGL.Animated.FillLayer
+              id={'polygon'}
+              style={fillStyle}
+              aboveLayerID="line"
+              layerIndex={100}
+            />
+          ) : null}
+          <MapboxGL.Animated.LineLayer
+            id={'line'}
+            style={lineStyle}
+            layerIndex={100}
+            sourceLayerID="shapeSourceTools"
+          />
+        </MapboxGL.Animated.ShapeSource>
+        <MapboxGL.ShapeSource
+          id="featureCollection"
+          shouldRasterizeIOS
+          hitbox={{width: 20, height: 20}}
+          shape={renderCollection}>
+          {layers.map((el: any, id: number) => {
+            switch (el.shape_type) {
+              case 'AREA':
+                return (
+                  <MapboxGL.Animated.FillLayer
+                    id={`polygon_${id}`}
+                    key={`polygon_${id}`}
+                    layerIndex={98}
+                    style={{
+                      fillColor: el.color,
+                      fillOpacity: 0.4,
+                    }}
+                    filter={['==', 'layer_id', el.id]}
+                  />
+                );
+              case 'POINT':
+                if (el.color)
+                  return (
+                    <MapboxGL.CircleLayer
+                      id={`centerpoint_${id}`}
+                      filter={['all', ['==', 'layer_id', el.id]]}
+                      key={`centerpoint_${id}`}
+                      layerIndex={99}
+                      style={{
+                        circleColor: el.color,
+                        circleOpacity: 1.0,
+                        circleRadius: 5.0,
+                        circleStrokeColor: colors.BLACK,
+                        circleStrokeWidth: 1,
+                      }}
+                    />
+                  );
+                if (el.icon)
+                  return (
+                    <MapboxGL.SymbolLayer
+                      id={`point_${id}`}
+                      key={`point_${id}`}
+                      layerIndex={100}
+                      filter={['==', 'layer_id', el.id]}
+                      style={{
+                        iconImage: `${RELEASE_ENDPOINT}${el.icon}`,
+                        iconAllowOverlap: false,
+                      }}
+                    />
+                  );
+
+                <MapboxGL.CircleLayer
+                  key={`null_${id}`}
+                  id={`null_${id}`}
+                  filter={['==', 'null', el.id]}
+                />;
+
+              default:
+                return (
+                  <MapboxGL.SymbolLayer
+                    id={`point_${id}`}
+                    layerIndex={1}
+                    key={`point_${id}`}
+                    filter={['==', 'layer_id', -1]}
+                    style={{
+                      iconImage: `${RELEASE_ENDPOINT}${el.icon}`,
+                      iconAllowOverlap: false,
+                    }}
+                  />
+                );
+            }
+          })}
+          <MapboxGL.Animated.LineLayer
+            id={'symbolPolygonaLine'}
+            layerIndex={101}
+            filter={['==', 'shape_type', 'AREA']}
+            style={{
+              lineCap: 'round',
+              lineWidth: 1,
+              lineOpacity: 0.4,
+              lineColor: colors.BLACK,
+            }}
+          />
+        </MapboxGL.ShapeSource>
+      </MapboxGL.MapView>
