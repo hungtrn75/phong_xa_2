@@ -29,6 +29,10 @@ export const settingTypes = {
   FETCH_DRAFTS_SUCCESS: '@SETTING/FETCH_DRAFTS_SUCCESS',
   FETCH_PENDING_FEARTURES_SUCCESS: '@SETTING/FETCH_PENDING_FEARTURES_SUCCESS',
   REFRESH_DATA: '@SETTING/REFRESH_DATA',
+  LAY_MAU_PHONG_XA: '@SETTING/LAY_MAU_PHONG_XA',
+  LAY_MAU_PHONG_XA_SUCCESS: '@SETTING/LAY_MAU_PHONG_XA_SUCCESS',
+  TAO_MAU_PHONG_XA: '@SETTING/TAO_MAU_PHONG_XA',
+  XOA_MAU_PHONG_XA: '@SETTING/XOA_MAU_PHONG_XA',
 };
 
 const getFormField = createAction(settingTypes.GET_FORM_FIELD);
@@ -40,6 +44,9 @@ const chinhSuaDanhDau = createAction(settingTypes.UPDATE_BOOKMARK);
 const xoaDanhDau = createAction(settingTypes.DELETE_BOOKMARK);
 const fetchDrafts = createAction(settingTypes.FETCH_DRAFTS);
 const refreshData = createAction(settingTypes.REFRESH_DATA);
+const layMauPhongXa = createAction(settingTypes.LAY_MAU_PHONG_XA);
+const taoMauPhongXa = createAction(settingTypes.TAO_MAU_PHONG_XA);
+const xoaMauPhongXa = createAction(settingTypes.XOA_MAU_PHONG_XA);
 
 export const settingsActions = {
   getFormField,
@@ -51,6 +58,9 @@ export const settingsActions = {
   xoaDanhDau,
   fetchDrafts,
   refreshData,
+  layMauPhongXa,
+  taoMauPhongXa,
+  xoaMauPhongXa,
 };
 
 const initialState = {
@@ -78,11 +88,19 @@ const initialState = {
   doneFeatures: [],
   level: 1,
   bookmarks: [],
-  // colorScheme: Appearance.getColorScheme(),
+  mauPhongXas: {
+    data: [],
+    current_page: 0,
+    last_page: 1,
+  },
 };
 
 export const settingReducers = handleActions(
   {
+    [settingTypes.LAY_MAU_PHONG_XA_SUCCESS]: (state, action) => ({
+      ...state,
+      mauPhongXas: action.payload,
+    }),
     [settingTypes.GET_CHU_GIAI_SUCCESS]: (state, action) => {
       let newLayers = [...action.payload].map(el => ({
         id: el.id,
@@ -171,6 +189,7 @@ export const settingReducers = handleActions(
                 feature(el.geometry, {
                   layer_id: it,
                   color: layerObject[it].color,
+                  icon: layerObject[it]?.meta?.icon,
                 }),
               ];
             }

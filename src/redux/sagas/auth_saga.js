@@ -6,17 +6,16 @@ import {BASE_URL, resetEndpoint} from '../../constants';
 import {insertQuery, selectQuery} from '../../database/sqlite';
 import {goBack, replace} from '../../navigator/helper';
 import {AuthService, LayerService} from '../../service';
+import CBNative from '../../utils/CBNative';
 import {networkHandler} from '../../utils/ErrorHandler';
 import {pushMessage} from '../../utils/flash_message';
 import AppStorage from '../../utils/storage';
 import {settingTypes} from '../state/setting_redux';
-import {AppState} from '../store';
 import {authTypes} from './../state/auth_redux';
-import {sharedTypes} from './../state/share_redux';
 
 function* loginWorker(action) {
   try {
-    yield put({type: sharedTypes.FETCHING});
+    CBNative.show();
     const {isInternetReachable} = yield call(NetInfo.fetch);
     if (isInternetReachable) {
       const userData = action.payload;
@@ -85,10 +84,9 @@ function* loginWorker(action) {
       replace('AUTH_CONTAINER');
     }
   } catch (error) {
-    console.log('auth', error, {...error});
     networkHandler(error, 'Đăng nhập thất bại vui lòng thử lại sau');
   } finally {
-    yield put({type: sharedTypes.DONE});
+    CBNative.hide();
   }
 }
 
@@ -111,7 +109,7 @@ export function* logoutWatcher() {
 
 function* updateProfileWorker(action) {
   try {
-    yield put({type: sharedTypes.FETCHING});
+    CBNative.show();
     yield call(AuthService.updateProfile, action.payload);
     const resMe = yield call(AuthService.me);
     yield put({
@@ -121,7 +119,7 @@ function* updateProfileWorker(action) {
   } catch (error) {
     console.log('auth', error);
   } finally {
-    yield put({type: sharedTypes.DONE});
+    CBNative.hide();
   }
 }
 
@@ -131,7 +129,7 @@ export function* updateProfileWatcher() {
 
 function* changeAvatarWorker(action) {
   try {
-    yield put({type: sharedTypes.FETCHING});
+    CBNative.show();
     yield call(AuthService.changeAvatar, action.payload);
     const resMe = yield call(AuthService.me);
     yield put({
@@ -141,7 +139,7 @@ function* changeAvatarWorker(action) {
   } catch (error) {
     console.log('auth', error, {...error});
   } finally {
-    yield put({type: sharedTypes.DONE});
+    CBNative.hide();
   }
 }
 
@@ -150,7 +148,7 @@ export function* changeAvatarWatcher() {
 }
 
 //@ts-ignore
-function* getMeWorker(action) {
+function* getMeWorker() {
   try {
     const baseUrl = yield call(AppStorage.getVal, 'base_url');
     if (baseUrl) {
@@ -275,7 +273,7 @@ export function* getMeWatcher() {
 
 function* changePasswordWorker(action) {
   try {
-    yield put({type: sharedTypes.FETCHING});
+    CBNative.show();
     const userId = yield select(state => state.auth.profile.id);
     yield call(AuthService.changePassword, userId, action.payload);
 
@@ -298,7 +296,7 @@ function* changePasswordWorker(action) {
         },
       });
   } finally {
-    yield put({type: sharedTypes.DONE});
+    CBNative.hide();
   }
 }
 

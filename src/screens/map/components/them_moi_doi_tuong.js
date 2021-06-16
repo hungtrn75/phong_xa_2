@@ -59,7 +59,7 @@ const ThemMoiDoiTuong = ({
         style={[styles.lop1, {}]}
         center>
         <CheckBox
-          value={lopDoiTuong.length && item.id === lopDoiTuong[0].id ? 1 : 0}
+          value={lopDoiTuong.length && item.id === lopDoiTuong[0].id}
           onCheckColor={Colors.PRIMARY}
           onTintColor={Colors.PRIMARY}
           disabled={true}

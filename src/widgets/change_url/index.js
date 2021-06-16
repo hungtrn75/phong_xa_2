@@ -1,21 +1,26 @@
 import React, {useState} from 'react';
-import {StyleSheet, Text} from 'react-native';
-import {TextInput, TouchableOpacity} from 'react-native-gesture-handler';
+import {StyleSheet, Text, TouchableOpacity} from 'react-native';
+import {TextInput} from 'react-native-gesture-handler';
 import Modal from 'react-native-modal';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import {resetEndpoint, SCREEN_HEIGHT, SCREEN_WIDTH} from '../../constants';
+import {
+  PROD_ENDPOINT,
+  resetEndpoint,
+  SCREEN_HEIGHT,
+  SCREEN_WIDTH,
+} from '../../constants';
 import {Colors} from '../../theme';
 import {pushMessage} from '../../utils/flash_message';
 import Block from '../base/block';
 
 const ChangeUrlConfig = ({onChangeFinished}) => {
-  const [url, setUrl] = useState('');
+  const [url, setUrl] = useState(PROD_ENDPOINT);
   const [visible, setVisible] = useState(false);
   const _showDrop = () => {
     setVisible(true);
   };
   const _hideDrop = () => {
-    setUrl('');
+    setUrl(PROD_ENDPOINT);
     setVisible(false);
   };
 
@@ -28,8 +33,6 @@ const ChangeUrlConfig = ({onChangeFinished}) => {
   const _onSubmit = async () => {
     setVisible(false);
     if (isUrlValid(url)) {
-      console.log('asdjsaid', url);
-
       await resetEndpoint(url);
       onChangeFinished && onChangeFinished();
     } else {
@@ -55,6 +58,7 @@ const ChangeUrlConfig = ({onChangeFinished}) => {
               style={styles.input}
               value={url}
               onChangeText={_onChangeText}
+              placeholder={PROD_ENDPOINT}
             />
             <Block row>
               <TouchableOpacity onPress={_hideDrop} style={[styles.btn]}>

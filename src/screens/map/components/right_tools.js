@@ -42,12 +42,7 @@ const RightTools = ({
         onPress={onSelectAction('mapTileShow')}
         tooltip="Thay đổi bản đồ nền"
       />
-      <DropdownItem
-        iconName="bookmark"
-        isActive={visible.actionShow}
-        onPress={onSelectAction('actionShow')}
-        tooltip="Đánh dấu vị trí"
-      />
+
       <View>
         <DropdownItem
           iconName="ruler-square-compass"
@@ -75,14 +70,20 @@ const RightTools = ({
         onPress={onSelectAction('mapOfflineShow')}
         tooltip="Dữ liệu offline của từng vùng bản đồ"
       />
-      <DropdownItem
+      {/* <DropdownItem
         iconName="file-document"
         isActive={visible.offlineFeature}
         onPress={onSelectAction('offlineFeature')}
         tooltip="Biểu mẫu được lưu trữ khi không có kết nối mạng"
+      /> */}
+      <DropdownItem
+        iconName="radioactive"
+        isActive={visible.mauPhongXa}
+        onPress={onSelectAction('mauPhongXa')}
+        tooltip="Mẫu phóng xạ"
       />
       <DropdownItem
-        iconName="lan-pending"
+        iconName="skull"
         isActive={visible.pendingFeatureShow}
         onPress={onSelectAction('pendingFeatureShow')}
         tooltip="Danh sách các đối tượng chưa được phê duyệt"

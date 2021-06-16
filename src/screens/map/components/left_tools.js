@@ -1,7 +1,9 @@
 import React from 'react';
-import {Alert, Linking, View} from 'react-native';
-import Geolocation from 'react-native-geolocation-service';
+import {Alert, Linking, Platform, View} from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import CBLocation from '../../../utils/CBLocation';
+import {requestLocationPermisstionsAndroid} from '../../../utils/permission';
+import {moderateScale} from '../../../utils/size_matter';
 import Block from '../../../widgets/base/block';
 import SizedBox from '../../../widgets/base/sized_box';
 import styles from '../map.styles';
@@ -25,57 +27,112 @@ const LeftTools = ({spaceRef, camera, map, location}) => {
   };
 
   const navigateCurrentLocation = async () => {
-    console.log(camera.current, location.current);
-
-    if (camera.current && location.current) {
-      const hasLocationPermission = await hasLocationPermissionIOS();
-
-      if (!hasLocationPermission) {
-        return;
+    const valid = await requestLocationPermisstionsAndroid();
+    if (valid) {
+      try {
+        const location = await CBLocation.getCurrentLocation();
+        if (location) {
+          const {
+            coords: {longitude, latitude},
+          } = location;
+          camera.current?.setCamera({
+            centerCoordinate: [longitude, latitude],
+            zoomLevel: 16,
+          });
+        }
+      } catch (error) {
+        switch (error.code) {
+          case 'E_NO_PROVIDER_ENABLE':
+            Alert.alert(
+              'Bạn đã tắt định vị cho thiết bị di động',
+              'Để tiếp tục vui lòng mở cài đặt để thay đổi!',
+              [
+                {
+                  text: 'Không, Cảm ơn',
+                  style: 'cancel',
+                },
+                {
+                  text: 'Mở cài đặt',
+                  onPress: CBLocation.openLocationSettings,
+                },
+              ],
+            );
+            break;
+          case 'E_NO_PERMISSION_GRANDED':
+            Alert.alert(
+              'Bạn đã từ chối quyền truy cấp vị trí',
+              'Để tiếp tục vui lòng cho phép quyền truy cập vị trí cho ứng dụng!',
+              [
+                {
+                  text: 'Không, Cảm ơn',
+                  style: 'cancel',
+                },
+                {
+                  text: 'Mở cài đặt',
+                  onPress: CBLocation.openAppPermissions,
+                },
+              ],
+            );
+            break;
+          case 'E_NETWORK_TIMEOUT':
+            Alert.alert(
+              'Chưa lấy được vị trí',
+              `Đợi thêm 1 phút hoặc có thể mở ứng dụng bản đồ ở điện thoại lên để lấy vị trí chính xác`,
+              [
+                {
+                  text: 'Đồng ý',
+                },
+                {
+                  text: 'Mở bản đồ',
+                  onPress: () => {
+                    const url = Platform.select({
+                      ios: 'maps:',
+                      android: 'geo:',
+                    });
+                    Linking.canOpenURL(url).then(supported => {
+                      if (supported) {
+                        return Linking.openURL(url);
+                      } else {
+                        const browser_url =
+                          'https://www.google.com/maps/@' +
+                          latitude +
+                          ',' +
+                          longitude +
+                          '?q=' +
+                          label;
+                        return Linking.openURL(browser_url);
+                      }
+                    });
+                  },
+                  style: 'cancel',
+                },
+              ],
+            );
+            break;
+          default:
+            break;
+        }
       }
-
-      camera.current.setCamera({
-        centerCoordinate: [
-          location.current.coords.longitude,
-          location.current.coords.latitude,
-        ],
-        zoomLevel: 16,
-        animationDuration: 1000,
-      });
     }
+
+    // if (camera.current && valid) {
+    //   camera.current.setCamera({
+    //     centerCoordinate: [
+    //       location.current.coords.longitude,
+    //       location.current.coords.latitude,
+    //     ],
+    //     zoomLevel: 16,
+    //     animationDuration: 1000,
+    //   });
+    // }
   };
 
-  const hasLocationPermissionIOS = async () => {
-    const openSetting = () => {
-      Linking.openSettings().catch(() => {
-        Alert.alert('Unable to open settings');
-      });
-    };
-    const status = await Geolocation.requestAuthorization('whenInUse');
-
-    if (status === 'granted') {
-      return true;
-    }
-
-    if (status === 'denied') {
-      Alert.alert('Location permission denied');
-    }
-
-    if (status === 'disabled') {
-      Alert.alert(`Turn on Location Services to determine your location.`, '', [
-        {text: 'Go to Settings', onPress: openSetting},
-        {text: "Don't Use Location", onPress: () => {}},
-      ]);
-    }
-
-    return false;
-  };
   return (
     <View
       style={[
         styles.addB,
         {
-          left: getSpace(spaceRef.current) + 20,
+          left: moderateScale(getSpace(spaceRef.current)) + 20,
         },
       ]}>
       <Block

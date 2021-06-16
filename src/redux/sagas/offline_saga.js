@@ -8,6 +8,7 @@ import {
 } from '../../database/sqlite';
 import {LayerService} from '../../service';
 import {updateLayer} from '../../service/layer';
+import CBNative from '../../utils/CBNative';
 import {pushMessage} from '../../utils/flash_message';
 import {offlineTypes} from '../state/offline_redux';
 import {settingTypes} from '../state/setting_redux';
@@ -20,12 +21,6 @@ function* changeInternetStatusWorker(action) {
         type: offlineTypes.CHANGE_INTERNET_STATUS_SUCCESS,
         payload: action.payload,
       });
-
-      // if (action.payload) {
-      //   yield put({
-      //     type: offlineTypes.SYNC_DATA,
-      //   });
-      // }
     } catch (error) {
       console.log('offline', error);
     }
@@ -78,9 +73,7 @@ function* syncDataWorker(action) {
         let uDrafts = [];
         let dDrafts = [];
 
-        yield put({
-          type: sharedTypes.FETCHING,
-        });
+        CBNative.show();
         yield put({
           type: offlineTypes.CHANGE_SYNC_STATUS,
           payload: true,
@@ -157,9 +150,7 @@ function* syncDataWorker(action) {
       type: offlineTypes.CHANGE_SYNC_STATUS,
       payload: false,
     });
-    yield put({
-      type: sharedTypes.DONE,
-    });
+    CBNative.hide();
   }
 }
 

@@ -11,7 +11,7 @@ export const BOTTOM_HEIGHT = getStatusBarHeight();
 //API
 const DEV_ENDPOINT = 'http://192.168.10.127:8000';
 const DEFAULT_ENDPOINT = 'http://phongxa.minhlamweb.com';
-export let PROD_ENDPOINT = __DEV__ ? DEV_ENDPOINT : DEFAULT_ENDPOINT;
+export let PROD_ENDPOINT = DEV_ENDPOINT;
 export let RELEASE_ENDPOINT = PROD_ENDPOINT;
 export let BASE_URL = RELEASE_ENDPOINT + '/api/';
 
@@ -33,6 +33,7 @@ export let route = {
   FORM_FIELD: 'mobile/forms',
   UPLOAD_DOCUMENT: 'upload/documents',
   CREATE_LAYER: 'mobileforms',
+  CREATE_LAYER_2: 'medical-info',
   QUAN_KHU: 'militaryregions',
   TINH_THANH: 'provinces',
   QUAN_HUYEN: 'districts',

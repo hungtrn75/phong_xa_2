@@ -102,7 +102,7 @@ const Block = props => {
     center && styles.center,
     flex && {flex},
     middle && styles.middle,
-    getMargins && getMargins,
+    margin && getMargins,
     padding && getPaddings,
     wrap && {flexWrap: 'wrap'},
     shadow && [ShareStyles.shadow, {backgroundColor: Colors.WHITE}],

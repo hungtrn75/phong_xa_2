@@ -1,7 +1,7 @@
 import moment from 'moment';
-import React from 'react';
+import React, {useCallback} from 'react';
 import isEqual from 'react-fast-compare';
-import {FlatList, Text, TouchableOpacity, View} from 'react-native';
+import {Alert, FlatList, Text, TouchableOpacity, View} from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {Colors} from '../../../theme';
 import colors from '../../../theme/colors';
@@ -19,7 +19,24 @@ const DoiTuongChuaDuyet = ({
 }) => {
   //RENDER ITEMS
   //Chờ duyệt layers
-
+  const onDelete = useCallback(
+    id => () => {
+      Alert.alert(
+        'Xoá thông tin thực địa',
+        'Dữ liệu sau khi xoá sẽ không được khôi phục.Bạn có chắc chắn muốn xoá hay không?',
+        [
+          {
+            text: 'Lần sau',
+          },
+          {
+            text: 'Xoá',
+            onPress: () => deleteLayer(id),
+          },
+        ],
+      );
+    },
+    [deleteLayer],
+  );
   const renderPendingFeatureItem = ({item, index}) => {
     return (
       <Block
@@ -33,6 +50,12 @@ const DoiTuongChuaDuyet = ({
                 : item.geometry.coordinates[0][1],
           },
         })}>
+        {item.region_bleached ? (
+          <Text
+            style={
+              styles.f16
+            }>{`Khu vực ảnh hưởng: ${item.region_bleached}`}</Text>
+        ) : null}
         <Text
           style={
             styles.f16
@@ -49,23 +72,18 @@ const DoiTuongChuaDuyet = ({
           style={
             styles.f16
           }>{`Số nhà bị nhiễm: ${item.number_house_bleached}`}</Text>
-        {item.region_bleached ? (
-          <Text
-            style={
-              styles.f16
-            }>{`Khu vực ảnh hưởng: ${item.region_bleached}`}</Text>
-        ) : null}
+
         <Block row center space="between">
           <Text style={styles.feaSub}>
             {moment(item.created_at).format('DD/MM/YYYY HH:mm')}
           </Text>
           <View style={{flex: 1}} />
-          <TouchableOpacity onPress={() => {}}>
-            <Icon name="pencil" size={22} color={Colors.BORDER} />
+          <TouchableOpacity onPress={chinhSuaLop(item)}>
+            <Icon name="pencil" size={22} color={'orange'} />
           </TouchableOpacity>
           <SizedBox width={15} />
-          <TouchableOpacity onPress={() => deleteLayer(item.id)}>
-            <Icon name="delete" size={22} color={Colors.BORDER} />
+          <TouchableOpacity onPress={onDelete(item.id)}>
+            <Icon name="delete" size={22} color={'red'} />
           </TouchableOpacity>
         </Block>
       </Block>
@@ -76,7 +94,7 @@ const DoiTuongChuaDuyet = ({
     <View style={[styles.mapTile]}>
       <View style={[styles.wrapTitle, styles.v8]}>
         <Icon name="format-list-text" size={24} color={Colors.WHITE} />
-        <Text style={styles.title}>Đối tượng chưa duyệt</Text>
+        <Text style={styles.title}>Thông Tin Thực Địa</Text>
         <TouchableOpacity onPress={onSelectAction('pendingFeatureShow')}>
           <Icon name="chevron-left" size={28} color={colors.WHITE} />
         </TouchableOpacity>

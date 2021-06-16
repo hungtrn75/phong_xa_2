@@ -42,47 +42,32 @@ export const getSubmittedForm = async ({layerId, featureId}) => {
   return res.data.data;
 };
 
-export const createLayer = async (
-  {documents, photos, mobile_form_id, values, geometry},
-  i = null,
-) => {
-  try {
-    const docs = await uploadMultiDocument(documents, mobile_form_id);
-    const imgs = await uploadMultiDocument(photos, mobile_form_id);
-    const res = await axios.post(route.CREATE_LAYER, {
-      ...values,
-      geometry,
-      documents: [...docs, ...imgs],
-    });
-    console.log(res);
-
-    return Promise.resolve(i);
-  } catch (error) {
-    console.log(error, {...error});
-
-    if (typeof i === 'number') return Promise.resolve(-1);
-    else return Promise.reject(error);
-  }
+export const createLayer = async ({type, values, geometry}, i = null) => {
+  const res = await axios.post(
+    type == 1 ? route.CREATE_LAYER : route.CREATE_LAYER_2,
+    type == 1
+      ? {
+          ...values,
+          geometry,
+        }
+      : values,
+  );
+  console.log(JSON.stringify(res.data, null, '\t'));
+  return res.data;
 };
 
-export const updateLayer = async (
-  {documents, photos, mobile_form_id, values, geometry},
-  layerId,
-) => {
-  try {
-    const docs = await uploadMultiDocument(documents, mobile_form_id);
-    const imgs = await uploadMultiDocument(photos, mobile_form_id);
-    const res = await axios.patch(`${route.CREATE_LAYER}/${layerId}`, {
-      ...values,
-      mobile_form_id,
-      geometry,
-      documents: [...docs, ...imgs],
-    });
-    return Promise.resolve();
-  } catch (error) {
-    console.log(error, {...error});
-    return Promise.reject(error);
-  }
+export const updateLayer = async ({type, values, geometry}, layerId) => {
+  const res = await axios.patch(
+    `${type == 1 ? route.CREATE_LAYER : route.CREATE_LAYER_2}/${layerId}`,
+    type == 1
+      ? {
+          ...values,
+          geometry,
+        }
+      : values,
+  );
+  console.log(JSON.stringify(res.data, null, '\t'));
+  return Promise.resolve();
 };
 
 export const deleteLayer = async layerId => {
@@ -221,4 +206,31 @@ export const uploadDocument = async ({uri, name, type}, mobile_form_id) => {
       },
     );
   });
+};
+
+export const layDSMauPhongXa = async page => {
+  const res = await axios.get(
+    `radiation-samples?page=${page}&perpage=10&paginate=true&with-sum=true`,
+  );
+  return res.data;
+};
+
+export const capNhatMauPhongXa = async ({values, geometry, layerId}) => {
+  if (layerId) {
+    const res = await axios.patch(`radiation-samples/${layerId}`, {
+      ...values,
+      geometry,
+    });
+    return res.data;
+  } else {
+    const res2 = await axios.post(`radiation-samples`, {
+      ...values,
+      geometry,
+    });
+    return res2.data;
+  }
+};
+export const xoaMauPhongXa = async layerId => {
+  const res = await axios.delete(`radiation-samples/${layerId}`);
+  return res.data;
 };

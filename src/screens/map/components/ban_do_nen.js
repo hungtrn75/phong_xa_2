@@ -10,8 +10,8 @@ import styles from '../map.styles';
 const BanDoNen = ({
   activeTitle,
   setActiveTile,
-  visible,
   baseMap,
+  visible,
   onSelectAction,
 }) => {
   const renderMapTile = ({item, index}) => {

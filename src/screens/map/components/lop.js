@@ -1,7 +1,8 @@
 import CheckBox from '@react-native-community/checkbox';
 import React from 'react';
-import {FlatList, Text, TouchableOpacity, View} from 'react-native';
+import {FlatList, Text, TouchableOpacity, View, Image} from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import {RELEASE_ENDPOINT} from '../../../constants';
 import {Colors} from '../../../theme';
 import Block from '../../../widgets/base/block';
 import styles from '../map.styles';
@@ -27,13 +28,17 @@ const Lop = function ({
         center>
         <CheckBox
           value={item.checked}
-          onCheckColor={Colors.PRIMARY}
-          onTintColor={Colors.PRIMARY}
-          disabled={true}
+          onChange={toggleLop({item, index})}
           animationDuration={0}
           style={styles.lop3}
         />
         <Text style={styles.lop2}>{item.name}</Text>
+        {item?.meta?.icon ? (
+          <Image
+            source={{uri: `${RELEASE_ENDPOINT}${item.meta.icon}`}}
+            style={styles.i1}
+          />
+        ) : null}
       </Block>
     );
   };
@@ -44,6 +49,7 @@ const Lop = function ({
         <TouchableOpacity
           onPress={() => {
             let newObj = [];
+
             if (toggle.current) {
               setWhiteList(layers.map(el => el.id));
 
@@ -58,7 +64,7 @@ const Lop = function ({
                 checked: false,
               }));
             }
-            toggle = !toggle;
+            toggle.current = !toggle.current;
             setPrevObjects(newObj);
           }}>
           <Icon name="layers" size={24} color={Colors.WHITE} />

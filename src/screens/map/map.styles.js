@@ -1,14 +1,17 @@
-import {StyleSheet} from 'react-native';
+import {Platform, StyleSheet} from 'react-native';
 import {SCREEN_HEIGHT, SCREEN_WIDTH, STATUSBAR_HEIGHT} from '../../constants';
 import {Colors, ShareStyles} from '../../theme';
 import colors from '../../theme/colors';
+import {moderateScale, scale} from '../../utils/size_matter';
 
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
   },
   f16: {
-    fontSize: 16,
+    fontSize: 14,
+    marginBottom: 2.5,
+    letterSpacing: 0.5,
   },
   offline: {
     marginBottom: 15,
@@ -29,7 +32,12 @@ const styles = StyleSheet.create({
   dropdown: {
     position: 'absolute',
     right: 20,
-    top: 10 + STATUSBAR_HEIGHT,
+    top:
+      10 +
+      Platform.select({
+        ios: STATUSBAR_HEIGHT,
+        android: 0,
+      }),
   },
   btn: {
     width: 40,
@@ -41,7 +49,7 @@ const styles = StyleSheet.create({
     ...ShareStyles.shadow,
   },
   nodata: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '500',
   },
   fab: {
@@ -66,12 +74,12 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 0,
     top: 0,
-    width: 400,
+    width: moderateScale(400),
     backgroundColor: colors.WHITE,
     bottom: 0,
   },
   title: {
-    fontSize: 20,
+    fontSize: 16,
     fontWeight: '600',
     color: colors.WHITE,
   },
@@ -87,13 +95,13 @@ const styles = StyleSheet.create({
   },
   wrapTitle: {
     backgroundColor: colors.PRIMARY,
-    paddingTop: STATUSBAR_HEIGHT + 10,
+    paddingTop: scale(STATUSBAR_HEIGHT + 10),
     justifyContent: 'center',
-    paddingLeft: 20,
-    paddingBottom: 20,
+    paddingLeft: moderateScale(20),
+    paddingBottom: moderateScale(20),
   },
   txt: {
-    fontSize: 16,
+    fontSize: 14,
     marginLeft: 15,
     fontWeight: '500',
   },
@@ -128,31 +136,34 @@ const styles = StyleSheet.create({
   },
   tmTxt: {
     marginBottom: 7.5,
-    fontSize: 16,
+    fontSize: 14,
   },
   tmReq: {
-    fontSize: 16,
+    fontSize: 14,
     color: colors.ERROR,
   },
   tmBtnD: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
     color: colors.ERROR,
     textAlign: 'center',
   },
   tmBtnA: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
     color: colors.BUTTON,
     textAlign: 'center',
   },
   q: {
     position: 'absolute',
-    width: 350,
+    width: moderateScale(350),
     right: 70,
-    top: STATUSBAR_HEIGHT + 10,
+    top:
+      Platform.select({
+        ios: STATUSBAR_HEIGHT,
+        android: 0,
+      }) + 10,
     backgroundColor: colors.WHITE,
-
     borderRadius: 4,
   },
   w: {
@@ -162,32 +173,31 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 4,
   },
   feaItem: {
-    paddingVertical: 15,
-    paddingHorizontal: 20,
-    marginBottom: 15,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: Colors.BORDER,
-    borderRadius: 4,
+    paddingVertical: 10,
+    paddingHorizontal: 10,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: Colors.BORDER,
   },
-  feaTitle: {fontSize: 16, fontWeight: '500'},
+  feaTitle: {fontSize: 14, fontWeight: '500'},
   feaSub: {color: colors.GRAY},
   mapTile1: {
     width: 24,
     height: 24,
   },
   lop1: {
-    paddingVertical: 15.5,
+    paddingVertical: scale(15.5),
   },
   lop2: {
-    fontSize: 16,
+    fontSize: 14,
+    flex: 1,
   },
   lop3: {
     width: 24,
     height: 24,
-    marginHorizontal: 15,
+    marginRight: 15,
   },
   cg1: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
     marginBottom: 5,
   },
@@ -235,7 +245,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     marginRight: 5,
   },
-  cg8: {fontSize: 16, marginLeft: 15, lineHeight: 25},
+  cg8: {fontSize: 14, marginLeft: 15, lineHeight: 25},
   p1: {color: 'red'},
   bm1: {
     borderRadius: 4,
@@ -248,7 +258,7 @@ const styles = StyleSheet.create({
     height: (SCREEN_HEIGHT * 100) / SCREEN_WIDTH,
   },
   bm3: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '500',
     marginBottom: 15,
   },
@@ -262,7 +272,7 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 8,
   },
   bm5: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '500',
     color: Colors.BUTTON,
   },
@@ -281,13 +291,17 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 8,
   },
   bm8: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '500',
     color: Colors.ERROR,
   },
   addB: {
     position: 'absolute',
-    top: STATUSBAR_HEIGHT + 10,
+    top:
+      Platform.select({
+        android: 0,
+        ios: STATUSBAR_HEIGHT,
+      }) + 10,
     left: 20,
   },
   v1: {
@@ -303,8 +317,8 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   v4: {
-    width: 60,
-    height: 40,
+    width: moderateScale(60),
+    height: moderateScale(40),
     borderRadius: 4,
     marginLeft: 10,
   },
@@ -320,7 +334,7 @@ const styles = StyleSheet.create({
     height: StyleSheet.hairlineWidth,
     width: '100%',
     backgroundColor: colors.BORDER,
-    marginVertical: 20,
+    marginVertical: moderateScale(20),
   },
   v7: {
     height: 40,
@@ -330,7 +344,7 @@ const styles = StyleSheet.create({
   v8: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingRight: 20,
+    paddingRight: moderateScale(10),
   },
   v9: {
     width: 90,
@@ -409,15 +423,16 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   fl: {
-    paddingTop: 20,
-    paddingHorizontal: 15,
+    paddingTop: scale(15),
+    paddingHorizontal: scale(15),
   },
   t1: {
-    fontSize: 18,
-    fontWeight: '600',
+    fontSize: 16,
+    fontWeight: 'bold',
+    letterSpacing: 0.5,
   },
   t2: {
-    fontSize: 16,
+    fontSize: 14,
     marginBottom: 10,
     fontWeight: '500',
     marginTop: 15,
@@ -427,32 +442,32 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     borderRadius: 4,
     width: '100%',
-    fontSize: 16,
+    fontSize: 14,
     paddingHorizontal: 10,
   },
   t4: {
-    fontSize: 16,
+    fontSize: 14,
     marginBottom: 10,
     fontWeight: '500',
   },
   t5: {
-    fontSize: 16,
+    fontSize: 14,
     color: Colors.GRAY,
   },
   t6: {
     fontSize: 18,
     fontWeight: '600',
   },
-  norTxt: {fontSize: 16, fontWeight: '500'},
+  norTxt: {fontSize: 14, fontWeight: '500'},
   norWTxt: {
     fontWeight: '500',
     color: colors.WHITE,
-    fontSize: 16,
+    fontSize: 14,
   },
   ltxt: {
     fontSize: 24,
     fontWeight: '600',
-    marginVertical: 15,
+    marginVertical: moderateScale(15),
   },
   fn: {
     width: 80,
@@ -471,11 +486,15 @@ const styles = StyleSheet.create({
   },
   norTxtBorder: {
     color: Colors.BORDER,
-    fontSize: 16,
+    fontSize: 14,
   },
   t7: {
     fontWeight: '500',
-    fontSize: 16,
+    fontSize: 14,
+  },
+  i1: {
+    width: 24,
+    height: 24,
   },
 });
 

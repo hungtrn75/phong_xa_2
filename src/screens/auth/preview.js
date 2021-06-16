@@ -9,6 +9,7 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  Dimensions,
 } from 'react-native';
 import RNBootSplash from 'react-native-bootsplash';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -18,11 +19,14 @@ import * as yup from 'yup';
 import {BOTTOM_HEIGHT, SCREEN_WIDTH, STATUSBAR_HEIGHT} from '../../constants';
 import {authActions} from '../../redux/state/auth_redux';
 import {Colors} from '../../theme';
+import {scale} from '../../utils/size_matter';
 import Block from '../../widgets/base/block';
 import Button from '../../widgets/base/button';
 import SizedBox from '../../widgets/base/sized_box';
 import Text from '../../widgets/base/text';
 import ChangeUrlConfig from '../../widgets/change_url';
+
+const {width, height} = Dimensions.get('window');
 
 const validationSchema = yup.object().shape({
   username: yup.string().required('Bắt buộc').email('Email không hợp lệ'),
@@ -42,8 +46,8 @@ const Preview = ({navigation, requestLogin}) => {
 
     // cleanup function
     return () => {
-      Keyboard.removeListener('keyboardDidShow', _keyboardDidShow);
-      Keyboard.removeListener('keyboardDidHide', _keyboardDidHide);
+      Keyboard.removeAllListeners('keyboardDidShow');
+      Keyboard.removeAllListeners('keyboardDidHide');
     };
   }, []);
 
@@ -68,14 +72,13 @@ const Preview = ({navigation, requestLogin}) => {
   return (
     <ScrollView
       showsVerticalScrollIndicator={false}
-      contentContainerStyle={{flex: 1}}
-      keyboardShouldPersistTaps="always">
+      contentContainerStyle={{flex: 1}}>
       <Block flex={1} style={styles.container} middle>
         <View style={{flex: 1, justifyContent: 'center'}}>
           <Block style={styles.header} center>
             <FastImage
               style={styles.imgBg}
-              resizeMode="contain"
+              resizeMode="cover"
               source={require('../../assets/images/phongxa.png')}
             />
             <Text style={styles.lead}>
@@ -85,7 +88,7 @@ const Preview = ({navigation, requestLogin}) => {
           <Text style={styles.title}>Đăng nhập</Text>
           <Formik
             initialValues={{
-              username: 'chuyenvien@khaosatphongxa.com',
+              username: 'thucdia@khaosatphongxa.com',
               password: '12345678',
             }}
             validationSchema={validationSchema}
@@ -145,7 +148,7 @@ const Preview = ({navigation, requestLogin}) => {
                       </TouchableOpacity>
                     ) : null}
                   </Block>
-                  <SizedBox height={20} />
+                  <SizedBox height={scale(20)} />
                   <Block>
                     <Icon
                       name="lock"
@@ -271,8 +274,8 @@ const styles = StyleSheet.create({
     height: SCREEN_WIDTH / 2,
   },
   imgBg: {
-    width: SCREEN_WIDTH,
-    height: 150,
+    width: scale(200),
+    height: scale(200),
   },
   header: {},
   lead: {
@@ -280,17 +283,17 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     maxWidth: 350,
     textAlign: 'center',
-    marginVertical: 20,
+    marginVertical: scale(20),
     textTransform: 'uppercase',
   },
   form: {
-    marginVertical: 20,
+    marginVertical: scale(20),
   },
   input: {
     height: 50,
     width: 400,
     fontSize: 16,
-    borderRadius: 4,
+    borderRadius: 8,
     paddingLeft: 46,
     paddingRight: 40,
   },
@@ -328,6 +331,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginBottom: 10,
     textTransform: 'uppercase',
-    marginTop: 40,
+    marginTop: scale(40),
   },
 });

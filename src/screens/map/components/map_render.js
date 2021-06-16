@@ -1,12 +1,12 @@
 //@ts-nocheck
 import MapboxGL from '@react-native-mapbox-gl/maps';
-import React from 'react';
+import * as turf from '@turf/turf';
+import React, {useCallback, useMemo, useState} from 'react';
 import isEqual from 'react-fast-compare';
 import {RELEASE_ENDPOINT} from '../../../constants';
 import colors from '../../../theme/colors';
 import {isValidCoordinate} from '../../../utils/helper';
 import styles from '../map.styles';
-import tileJson from './vietnam';
 
 MapboxGL.setAccessToken(
   'pk.eyJ1IjoiaHV1bmdoaXBoYW0iLCJhIjoiY2pseXg2ZTl0MXRkdDN2b2J5bzFpbmlhZSJ9.cChkzU6jLVXx4v75qo_dfQ',
@@ -25,12 +25,11 @@ const MapRenderer = React.forwardRef(
       onMapPress,
       onMapRendered,
       onLocationUpdate,
-      setAnnitation,
       showPosition,
       location,
-      setshowPosition,
       draftCollection,
       pendingCollection,
+      mauPhongXas,
     },
     ref,
   ) => {
@@ -46,122 +45,114 @@ const MapRenderer = React.forwardRef(
           id="rasterLayer"
           sourceLayerID="rasterSource"
           style={{rasterOpacity: 1}}
-          layerIndex={85}
+          layerIndex={110}
         />
       </MapboxGL.RasterSource>
     );
 
-    const renderTile2 = () => (
-      <>
-        <MapboxGL.VectorSource
-          id="vietnam"
-          tileUrlTemplates={[
-            'http://titles.ceid.gov.vn/vietnam_ocean_vt/{z}/{x}/{y}.pbf',
-          ]}>
-          {tileJson.layers
-            .filter(el =>
-              ['line', 'fill', 'background', 'symbol'].includes(el.type),
-            )
-            .map(el => {
-              if (el.type === 'background') {
-                return (
-                  <MapboxGL.BackgroundLayer
-                    id={el.id}
-                    key={el.id}
-                    layerIndex={85}
-                    style={{
-                      visibility: 'visible',
-                      backgroundColor: el.paint['background-color'],
-                    }}
-                  />
-                );
-              }
-              if (el.type === 'line')
-                return (
-                  <MapboxGL.LineLayer
-                    id={el.id}
-                    key={el.id}
-                    sourceID={el.source}
-                    // filter={el.filter}
-                    // layerIndex={30}
-                    sourceLayerID={el['source-layer']}
-                    maxZoomLevel={el.maxzoom ? el.maxzoom : 20}
-                    minZoomLevel={el.minzoom ? el.minzoom : 0}
-                    style={{
-                      lineColor: el.paint['line-color']['stops']
-                        ? el.paint['line-color']['stops'][0][1]
-                        : el.paint['line-color'],
-                      // lineWidth: el.paint['line-width']
-                      //   ? el.paint['line-width']['base']
-                      //   : 1.2,
-                    }}
-                  />
-                );
-              if (el.type == 'symbol') {
-                return (
-                  <MapboxGL.SymbolLayer
-                    key={el.id}
-                    id={el.id}
-                    sourceID={el.source}
-                    // filter={el.filter}
-                    // layerIndex={100}
-                    sourceLayerID={el['source-layer']}
-                    maxZoomLevel={el.maxzoom ? el.maxzoom : 20}
-                    minZoomLevel={el.minzoom ? el.minzoom : 0}
-                    style={{
-                      // textColor: el.paint['text-color'],
-                      // textHaloColor: el.paint['text-halo-color'],
-                      textHaloBlur: 0.5,
-                      textHaloColor: '#ffffff',
-                      textField: '{name}',
-                      textFont: el.paint['text-font'] ?? [
-                        'Open Sans Regular',
-                        'Arial Unicode MS Regular',
-                      ],
-                      textSize: el.paint['text-size']
-                        ? el.paint['text-size']
-                        : 12,
-                      visibility: 'visible',
-                      iconImage: '{subclass}_15',
-                    }}
-                  />
-                );
-              }
+    // console.log(JSON.stringify(renderCollection));
+    // console.log(layers);
+    const mapboxImages = useMemo(() => {
+      let images = {};
+      layers.map(el => {
+        if (el.meta?.icon) {
+          images[el.meta.icon] = {uri: `${RELEASE_ENDPOINT}${el.meta.icon}`};
+        }
+      });
+      return images;
+    }, [layers]);
+
+    const locationShape = useMemo(() => {
+      if (showPosition && isValidCoordinate(+location.lon, +location.lat)) {
+        const point = turf.point([+location.lon, +location.lat]);
+        return point;
+      }
+
+      const collection = [];
+      annotations.coordinates.map(el => {
+        const pItem = turf.point(el);
+        collection.push(pItem);
+      });
+
+      return turf.featureCollection(collection);
+    }, [annotations, location, showPosition]);
+
+    const pxShape = useMemo(() => {
+      const collection = [];
+      mauPhongXas.map(el => {
+        collection.push(turf.point([+el.longitude, +el.latitude]));
+      });
+      return turf.featureCollection(collection);
+    }, [mauPhongXas]);
+
+    const renderLayer = useCallback(() => {
+      return layers.map((el, id) => {
+        switch (el.shape_type) {
+          case 'POLYGONE':
+            return (
+              <MapboxGL.Animated.FillLayer
+                id={`polygon_${id}`}
+                key={`polygon_${id}`}
+                style={{
+                  fillColor: 'blue',
+                  fillOpacity: 0.2,
+                }}
+                filter={['==', 'layer_id', el.id]}
+              />
+            );
+          case 'POINT':
+            if (el.color)
               return (
-                <MapboxGL.FillLayer
-                  key={el.id}
-                  id={el.id}
-                  sourceID={el.source}
-                  filter={el.filter}
-                  sourceLayerID={el['source-layer']}
-                  maxZoomLevel={el.maxzoom ? el.maxzoom : 20}
-                  minZoomLevel={el.minzoom ? el.minzoom : 0}
-                  style={{
-                    fillColor: el.paint['fill-color']['stops']
-                      ? el.paint['fill-color']['stops'][0][1]
-                      : el.paint['fill-color'],
-                  }}
+                <MapboxGL.CircleLayer
+                  id={`centerpoint_${id}`}
+                  filter={['all', ['==', 'layer_id', el.id]]}
+                  key={`centerpoint_${id}`}
+                  style={{...mapboxStyles.c1, circleColor: el.color}}
                 />
               );
-            })}
-        </MapboxGL.VectorSource>
-      </>
-    );
+            if (el?.meta?.icon) {
+              return (
+                <MapboxGL.SymbolLayer
+                  id={`point_${id}`}
+                  layerIndex={120}
+                  key={`point_${id}`}
+                  filter={['==', 'layer_id', el.id]}
+                  style={mapboxStyles.s1}
+                />
+              );
+            }
+            return (
+              <MapboxGL.CircleLayer
+                id={`no_asset_point_${id}`}
+                filter={['all', ['==', 'layer_id', el.id]]}
+                key={`no_asset_point_${id}`}
+                style={mapboxStyles.c2}
+              />
+            );
+          default:
+            return (
+              <MapboxGL.SymbolLayer
+                id={`point_${id}`}
+                layerIndex={1}
+                key={`point_${id}`}
+                filter={['==', 'layer_id', -1]}
+                style={mapboxStyles.s2}
+              />
+            );
+        }
+      });
+    }, [layers]);
 
     return (
       <MapboxGL.MapView
         ref={map}
         style={styles.map}
         pitchEnabled={false}
-        styleURL={MapboxGL.StyleURL.Light}
+        styleURL={'http://molietsi.imagetrekk.com/static/vietnam-vector.json'}
         logoEnabled={false}
+        attributionEnabled={false}
         onPress={onMapPress}
         userTrackingMode={MapboxGL.UserTrackingModes.Follow}
-        // onRegionDidChange={async () => {
-        //   const zoom = await map?.current.getZoom();
-        //   console.log(zoom);
-        // }}
-
         onDidFinishRenderingFrameFully={onMapRendered}>
         <MapboxGL.UserLocation
           visible={true}
@@ -173,112 +164,16 @@ const MapRenderer = React.forwardRef(
           zoomLevel={initCamera.zoomLevel}
           animationMode="flyTo"
           followUserLocation={false}
-          maxZoomLevel={16}
           centerCoordinate={initCamera.centerCoordinate}
         />
-        {baseMap[activeTitle].type === 'raster' ? renderTile1() : renderTile2()}
-
-        <MapboxGL.Animated.ShapeSource id="shapeSourceTools" shape={layer}>
-          {mode === 'polygon' ? (
-            <MapboxGL.Animated.FillLayer
-              id={'polygon'}
-              style={fillStyle}
-              aboveLayerID="line"
-              belowLayerID="current_loc"
-              layerIndex={89}
-            />
-          ) : null}
-          <MapboxGL.Animated.LineLayer
-            id={'line'}
-            style={lineStyle}
-            layerIndex={89}
-            sourceLayerID="shapeSourceTools"
-          />
-        </MapboxGL.Animated.ShapeSource>
+        {baseMap[activeTitle].type === 'raster' ? renderTile1() : null}
+        <MapboxGL.Images images={mapboxImages} />
         <MapboxGL.ShapeSource
           id="featureCollection"
           shouldRasterizeIOS
           hitbox={{width: 20, height: 20}}
           shape={renderCollection}>
-          {layers.map((el, id) => {
-            switch (el.shape_type) {
-              case 'POLYGONE':
-                return (
-                  <MapboxGL.Animated.FillLayer
-                    id={`polygon_${id}`}
-                    key={`polygon_${id}`}
-                    layerIndex={86}
-                    style={{
-                      fillColor: 'blue',
-                      fillOpacity: 0.2,
-                    }}
-                    filter={['==', 'layer_id', el.id]}
-                  />
-                );
-              case 'POINT':
-                if (el.color)
-                  return (
-                    <MapboxGL.CircleLayer
-                      id={`centerpoint_${id}`}
-                      filter={['all', ['==', 'layer_id', el.id]]}
-                      key={`centerpoint_${id}`}
-                      layerIndex={89}
-                      style={{
-                        circleColor: el.color,
-                        circleOpacity: 1.0,
-                        circleRadius: 5.0,
-                        circleStrokeColor: colors.BLACK,
-                        circleStrokeWidth: 1,
-                      }}
-                    />
-                  );
-                if (el?.meta?.icon)
-                  return (
-                    <MapboxGL.SymbolLayer
-                      id={`point_${id}`}
-                      key={`point_${id}`}
-                      layerIndex={89}
-                      filter={['==', 'layer_id', el.id]}
-                      style={{
-                        iconImage: `${RELEASE_ENDPOINT}${el.meta.icon}`,
-                        iconAllowOverlap: false,
-                        iconSize: 0.3,
-                      }}
-                    />
-                  );
-
-                <MapboxGL.CircleLayer
-                  key={`null_${id}`}
-                  id={`null_${id}`}
-                  filter={['==', 'null', el.id]}
-                />;
-
-              default:
-                return (
-                  <MapboxGL.SymbolLayer
-                    id={`point_${id}`}
-                    layerIndex={1}
-                    key={`point_${id}`}
-                    filter={['==', 'layer_id', -1]}
-                    style={{
-                      iconImage: `${RELEASE_ENDPOINT}${el.icon}`,
-                      iconAllowOverlap: false,
-                    }}
-                  />
-                );
-            }
-          })}
-          {/* <MapboxGL.Animated.LineLayer
-            id={'symbolPolygonaLine'}
-            layerIndex={101}
-            filter={['==', 'shape_type', 'POLYGONE']}
-            style={{
-              lineCap: 'round',
-              lineWidth: 1,
-              lineOpacity: 0.4,
-              lineColor: colors.BLACK,
-            }}
-          /> */}
+          {renderLayer()}
         </MapboxGL.ShapeSource>
         <MapboxGL.ShapeSource
           id="pendingFeatureCollection"
@@ -289,23 +184,12 @@ const MapRenderer = React.forwardRef(
             key={`null_point`}
             id={`null_point`}
             filter={['==', 'layer_id', -2]}
-            layerIndex={90}
-            style={{
-              circleOpacity: 0.7,
-              circleColor: 'red',
-              circleRadius: 6.0,
-              circleStrokeColor: 'white',
-              circleStrokeWidth: 2,
-            }}
+            style={mapboxStyles.circlePendingLayer}
           />
           <MapboxGL.FillLayer
             id={`polygon_pending`}
             key={`polygon_pending`}
-            layerIndex={91}
-            style={{
-              fillColor: 'red',
-              fillOpacity: 0.7,
-            }}
+            style={mapboxStyles.fillPendingLayer}
             filter={['==', 'layer_id', -3]}
           />
         </MapboxGL.ShapeSource>
@@ -318,53 +202,44 @@ const MapRenderer = React.forwardRef(
             key={`null_point_2`}
             id={`null_point_2`}
             filter={['==', 'layer_id', -4]}
-            layerIndex={90}
-            style={{
-              circleOpacity: 0.7,
-              circleColor: 'blue',
-              circleRadius: 6.0,
-              circleStrokeColor: 'white',
-              circleStrokeWidth: 2,
-            }}
+            style={mapboxStyles.circlePendingLayer}
           />
           <MapboxGL.FillLayer
             id={`polygon_pending_2`}
             key={`polygon_pending_2`}
-            layerIndex={91}
-            style={{
-              fillColor: 'blue',
-              fillOpacity: 0.7,
-            }}
+            style={mapboxStyles.fillDraftLayer}
             filter={['==', 'layer_id', -5]}
           />
         </MapboxGL.ShapeSource>
-        {annotations.coordinates.map((el, index) => (
-          <MapboxGL.PointAnnotation
-            id={`point_annotation${index}`}
-            key={`point_annotation${index}`}
-            // selected={index === annotations.activeIndex}
-            onSelected={() => {
-              setAnnitation({
-                ...annotations,
-                activeIndex: index,
-              });
-            }}
-            coordinate={el}
+        <MapboxGL.ShapeSource
+          id="mauPhongXaSource"
+          shouldRasterizeIOS
+          hitbox={{width: 20, height: 20}}
+          shape={pxShape}>
+          <MapboxGL.CircleLayer
+            key={`mauPhongXaLayer`}
+            id={`mauPhongXaLayer`}
+            style={mapboxStyles.circlePXLayer}
           />
-        ))}
-        {showPosition && isValidCoordinate(location.lon, +location.lat) && (
-          <MapboxGL.PointAnnotation
-            id={`current_loc`}
-            key={`current_loc`}
-            onSelected={() => {
-              setshowPosition(false);
-              onMapPress({
-                geometry: {coordinates: [+location.lon, +location.lat]},
-              });
-            }}
-            coordinate={[+location.lon, +location.lat]}
+        </MapboxGL.ShapeSource>
+        <MapboxGL.ShapeSource id="shapeSourceTools" shape={layer}>
+          {mode === 'polygon' ? (
+            <MapboxGL.FillLayer
+              id={'polygon'}
+              style={fillStyle}
+              aboveLayerID="line"
+              belowLayerID="current_loc"
+            />
+          ) : null}
+          <MapboxGL.LineLayer
+            id={'line'}
+            style={lineStyle}
+            sourceLayerID="shapeSourceTools"
           />
-        )}
+        </MapboxGL.ShapeSource>
+        <MapboxGL.ShapeSource id="anotation_shape" shape={locationShape}>
+          <MapboxGL.CircleLayer id="curr_loc" style={mapboxStyles.annotation} />
+        </MapboxGL.ShapeSource>
       </MapboxGL.MapView>
     );
   },
@@ -387,4 +262,65 @@ const initCamera = {
   centerCoordinate: [106.934828, 16.035012],
   zoomLevel: 5,
   animationDuration: 1000,
+};
+
+const mapboxStyles = {
+  c1: {
+    circleOpacity: 1.0,
+    circleRadius: 5.0,
+    circleStrokeColor: colors.WHITE,
+    circleStrokeWidth: 1,
+  },
+  c2: {
+    circleColor: 'blue',
+    circleOpacity: 1.0,
+    circleRadius: 5.0,
+    circleStrokeColor: colors.WHITE,
+    circleStrokeWidth: 1,
+  },
+  circlePXLayer: {
+    circleOpacity: 0.7,
+    circleColor: colors.SECONDARY,
+    circleRadius: 6.0,
+    circleStrokeColor: 'white',
+    circleStrokeWidth: 2,
+  },
+  circlePendingLayer: {
+    circleOpacity: 0.7,
+    circleColor: 'red',
+    circleRadius: 6.0,
+    circleStrokeColor: 'white',
+    circleStrokeWidth: 2,
+  },
+  fillPendingLayer: {
+    fillColor: 'red',
+    fillOpacity: 0.7,
+  },
+
+  circleDraftLayer: {
+    circleOpacity: 0.7,
+    circleColor: 'blue',
+    circleRadius: 6.0,
+    circleStrokeColor: 'white',
+    circleStrokeWidth: 2,
+  },
+  fillDraftLayer: {
+    fillColor: 'blue',
+    fillOpacity: 0.7,
+  },
+  annotation: {
+    circleColor: 'orange',
+    circleStrokeColor: 'white',
+    circleStrokeWidth: 2,
+  },
+  s1: {
+    iconImage: ['get', 'icon'],
+    iconAllowOverlap: false,
+    iconSize: 0.2,
+  },
+  s2: {
+    iconImage: ['get', 'icon'],
+    iconAllowOverlap: false,
+    iconSize: 0.2,
+  },
 };

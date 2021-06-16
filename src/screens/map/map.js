@@ -1,3 +1,4 @@
+import {useActionSheet} from '@expo/react-native-action-sheet';
 //@ts-nocheck
 import MapboxGL from '@react-native-mapbox-gl/maps';
 import {area, length, lineString, polygon} from '@turf/turf';
@@ -11,6 +12,7 @@ import {bindActionCreators} from 'redux';
 import {offlineActions} from '../../redux/state/offline_redux';
 import {settingsActions} from '../../redux/state/setting_redux';
 import {ShareStyles} from '../../theme';
+import {requestLocationPermisstionsAndroid} from '../../utils/permission';
 import BanDoNen from './components/ban_do_nen';
 import DanhDau, {DanhSachDanhDau} from './components/danh_dau';
 import DoiTuongChuaDuyet from './components/doi_tuong_chua_duyet';
@@ -20,6 +22,7 @@ import LeftTools from './components/left_tools';
 import Lop from './components/lop';
 import MapPack from './components/map_pack';
 import MapRenderer from './components/map_render';
+import MauPhongXa from './components/mau_phong_xa/MauPhongXa';
 import OfflinePacks from './components/offline_packs';
 import RightTools from './components/right_tools';
 import ThemMoiDoiTuong from './components/them_moi_doi_tuong';
@@ -45,6 +48,7 @@ const initVisible = {
   visibleChuGiai: false,
   pendingFeatureShow: false,
   offlineFeature: false,
+  mauPhongXa: false,
 };
 
 const initVisible2 = {
@@ -59,6 +63,23 @@ const initDanhDau = {
   image: null,
   isEdit: false,
 };
+
+const mobileForms = [
+  {
+    id: 1,
+    name: 'Dạng vùng',
+    layer: {
+      shape_type: 'POLYGONE',
+    },
+  },
+  {
+    id: 2,
+    name: 'Dạng điểm',
+    layer: {
+      shape_type: 'POINT',
+    },
+  },
+];
 
 const Map = ({
   navigation,
@@ -78,7 +99,9 @@ const Map = ({
   dCollection,
   pCollection,
   deleteOffline,
+  mauPhongXas,
 }) => {
+  const {showActionSheetWithOptions} = useActionSheet();
   //Refs
   const camera = useRef(null);
   const map = useRef(null);
@@ -113,6 +136,8 @@ const Map = ({
     lat: '',
     lon: '',
   });
+
+  const memoPx = useRef(null);
   let [showPosition, setshowPosition] = useState(false);
   let [whiteList, setWhiteList] = useState([]);
   let location = useRef(null);
@@ -147,11 +172,12 @@ const Map = ({
 
   //MAP OFFLINE
   useEffect(() => {
-    if (!__DEV__)
-      Alert.alert(
-        'Chú ý',
-        'Nếu khu vực không có kết nối mạng. Vui lòng tải dữ liệu bản đồ thực địa trước khi đến khảo sát!',
-      );
+    // if (!__DEV__)
+    //   Alert.alert(
+    //     'Chú ý',
+    //     'Nếu khu vực không có kết nối mạng. Vui lòng tải dữ liệu bản đồ thực địa trước khi đến khảo sát!',
+    //   );
+    requestLocationPermisstionsAndroid();
     getPacks();
   }, []);
 
@@ -251,19 +277,18 @@ const Map = ({
   };
 
   const navigateToPending = item => () => {
-    if (camera.current) {
-      camera.current.setCamera({
-        centerCoordinate: item.center_point.coordinates,
-        zoomLevel: 16,
-        animationDuration: 1000,
-      });
-    }
+    camera.current?.setCamera({
+      centerCoordinate: item.center_point.coordinates,
+      zoomLevel: 16,
+      animationDuration: 1000,
+    });
   };
 
   //UTILITIES
 
   const chinhSuaLop = item => () => {
     spaceRef.current = null;
+    setVisible({...initVisible});
     if (item.geometry.type === 'Polygon') {
       setMode('polygon');
       const newCoor = [...item.geometry.coordinates[0]];
@@ -282,15 +307,16 @@ const Map = ({
         ],
       };
       valueArea.current = {
-        layerId: item.mobile_form.layer_id,
+        layerId: 2,
         featureId: item.id,
+        item,
       };
       setAnnitation({
         coordinates: newCoor,
         activeIndex: null,
       });
-      setVisible({...initVisible});
-      setLopDoituong([item.mobile_form]);
+
+      setLopDoituong([mobileForms[0]]);
       setLayer(newLayer);
       setVisible2({
         themMoi: true,
@@ -301,8 +327,9 @@ const Map = ({
     if (item.geometry.type === 'Point') {
       setMode('point');
       valueArea.current = {
-        layerId: item.mobile_form.layer_id,
+        layerId: 1,
         featureId: item.id,
+        item,
       };
       setAnnitation({
         coordinates: [[...item.geometry.coordinates]],
@@ -313,7 +340,7 @@ const Map = ({
         thuNho: false,
         ve: true,
       });
-      setLopDoituong([item.mobile_form]);
+      setLopDoituong([mobileForms[1]]);
     }
   };
 
@@ -370,12 +397,13 @@ const Map = ({
     }
 
     if (lopDoiTuong.length) {
-      return navigation.navigate('ADD_PLACE', {
+      navigation.navigate('ADD_PLACE', {
         formValues: {
           layer: lopDoiTuong[0],
           geometry,
           onXoaHanhDongThemMoi,
           edit: valueArea.current,
+          type: 1,
         },
       });
     }
@@ -462,6 +490,7 @@ const Map = ({
         showPosition={showPosition}
         location={currentLoc}
         ref={{camera, map}}
+        mauPhongXas={mauPhongXas}
       />
       <LeftTools
         camera={camera}
@@ -486,6 +515,7 @@ const Map = ({
         showLocation={showPosition}
         setshowPosition={setshowPosition}
         spaceRef={spaceRef}
+        memoPx={memoPx}
       />
       <DoDac
         show={visible.visibleCaculate}
@@ -553,22 +583,7 @@ const Map = ({
         setLayer={setLayer}
         setLopDoituong={setLopDoituong}
         setMode={setMode}
-        forms={[
-          {
-            id: 1,
-            name: 'Dạng vùng',
-            layer: {
-              shape_type: 'POLYGONE',
-            },
-          },
-          {
-            id: 2,
-            name: 'Dạng điểm',
-            layer: {
-              shape_type: 'POINT',
-            },
-          },
-        ]}
+        forms={mobileForms}
         initLayer={initLayer}
         initVisible={initVisible}
         lopDoiTuong={lopDoiTuong}
@@ -589,7 +604,14 @@ const Map = ({
         deleteLayer={deleteLayer}
       />
       {/* OFFLINE FORM */}
-
+      <MauPhongXa
+        camera={camera}
+        visible={visible.mauPhongXa}
+        onSelectAction={onSelectAction}
+        setLoc={setcurrentLoc}
+        memoPx={memoPx}
+        location={currentLoc}
+      />
       <DuLieuOffline
         visible={visible.offlineFeature}
         syncOffline={syncOffline}
@@ -627,6 +649,7 @@ const mapStateToProps = state => ({
   dCollection: state.settings.draftCollection,
   bookmarks: state.settings.bookmarks,
   offlineData: state.offline.qs,
+  mauPhongXas: state.settings.mauPhongXas.data,
 });
 
 const mapDispatchToProps = dispatch =>

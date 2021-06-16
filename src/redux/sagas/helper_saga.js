@@ -1,8 +1,16 @@
 import NetInfo from '@react-native-community/netinfo';
-import {all, call, delay, put, select, takeLatest} from 'redux-saga/effects';
+import {showMessage} from 'react-native-flash-message';
+import {all, call, put, select, takeLatest} from 'redux-saga/effects';
 import {insertQuery, selectQuery} from '../../database/sqlite';
 import {goBack} from '../../navigator/helper';
 import {AuthService, LayerService} from '../../service';
+import {
+  capNhatMauPhongXa,
+  layDSMauPhongXa,
+  xoaMauPhongXa,
+} from '../../service/layer';
+import CBNative from '../../utils/CBNative';
+import {networkHandler} from '../../utils/ErrorHandler';
 import {pushMessage} from '../../utils/flash_message';
 import AppStorage from '../../utils/storage';
 import {authTypes} from '../state/auth_redux';
@@ -25,9 +33,7 @@ export function* toggleSchemeWatcher() {
 
 function* getFormFieldWorker(action) {
   try {
-    yield put({
-      type: sharedTypes.FETCHING,
-    });
+    CBNative.show();
     const {formId, edit} = action.payload;
     const forms = yield select(state => state.settings.forms);
     const form = forms.find(el => el.id === formId);
@@ -54,15 +60,13 @@ function* getFormFieldWorker(action) {
       });
     }
   } catch (error) {
-    console.log('helper', error, {...error});
+    networkHandler(error);
     yield put({
       type: settingTypes.GET_FORM_FIELD_SUCCESS,
       payload: null,
     });
   } finally {
-    yield put({
-      type: sharedTypes.DONE,
-    });
+    CBNative.hide();
   }
 }
 
@@ -72,37 +76,33 @@ export function* getFormFieldWatcher() {
 
 function* createLayerWorker(action) {
   try {
-    yield put({
-      type: sharedTypes.FETCHING,
-    });
-    const [isConnected, userId] = yield select(state => [
-      state.offline.isConnected,
-      state.auth.profile.id,
-    ]);
+    CBNative.show();
+    const {isConnected} = yield call(NetInfo.fetch);
     const {onXoaHanhDongThemMoi, edit, ...rest} = action.payload;
     if (isConnected) {
       let res;
-      if (edit?.featureId) {
-        yield call(LayerService.updateLayer, rest, edit.featureId);
+      if (edit?.item?.id) {
+        yield call(LayerService.updateLayer, rest, edit.item.id);
       } else yield call(LayerService.createLayer, rest);
+      if (action.payload.type == 1) {
+        const [pendingFeatures] = yield all([
+          call(LayerService.getPendingFeatures),
+        ]);
 
-      const [pendingFeatures] = yield all([
-        call(LayerService.getPendingFeatures),
-      ]);
+        const tPendingFeatures = pendingFeatures.map(el => ({
+          feature_id: el.id,
+          json: JSON.stringify(el),
+        }));
 
-      const tPendingFeatures = pendingFeatures.map(el => ({
-        feature_id: el.id,
-        json: JSON.stringify(el),
-      }));
+        yield call(insertQuery, [], tPendingFeatures, 'tbl_pending_features');
 
-      yield call(insertQuery, [], tPendingFeatures, 'tbl_pending_features');
+        yield put({
+          type: settingTypes.FETCH_PENDING_FEARTURES_SUCCESS,
+          payload: pendingFeatures,
+        });
+      }
 
-      yield put({
-        type: settingTypes.FETCH_PENDING_FEARTURES_SUCCESS,
-        payload: pendingFeatures,
-      });
-
-      if (edit?.layerId) {
+      if (edit?.item?.id) {
         pushMessage({
           message: 'Dữ liệu cập nhật thành công',
           type: 'success',
@@ -113,43 +113,42 @@ function* createLayerWorker(action) {
           type: 'success',
         });
       }
-      yield call(onXoaHanhDongThemMoi);
+      if (typeof onXoaHanhDongThemMoi == 'function')
+        yield call(onXoaHanhDongThemMoi);
     } else {
-      const rDrafts = [
-        {
-          json: JSON.stringify({...rest, edit}),
-          error: '',
-          status: 1,
-        },
-      ];
-      yield call(insertQuery, [], rDrafts, 'tbl_drafts');
-      const {insertId, rows} = yield call(
-        selectQuery,
-        'SELECT * FROM tbl_drafts',
-        [],
-      );
-
-      let drafts = [];
-      for (let i = 0; i < rows.length; i++) {
-        var item = rows.item(i);
-        drafts.push({
-          ...item,
-          json: JSON.parse(item.json),
-        });
-      }
-
-      yield put({
-        type: settingTypes.FETCH_DRAFTS_SUCCESS,
-        payload: drafts,
+      showMessage({
+        message: 'Không có kết nối mạng',
+        description: 'Vui lòng kiểm tra lại kết nội mạng để tiếp tục',
+        type: 'danger',
       });
+      // const rDrafts = [
+      //   {
+      //     json: JSON.stringify({...rest, edit}),
+      //     error: '',
+      //     status: 1,
+      //   },
+      // ];
+      // yield call(insertQuery, [], rDrafts, 'tbl_drafts');
+      // const {rows} = yield call(selectQuery, 'SELECT * FROM tbl_drafts', []);
 
-      yield call(action.payload.onXoaHanhDongThemMoi);
-      pushMessage({
-        message: 'Dữ liệu của bạn sẽ được đồng bộ sau khi kết nối lại internet',
-        type: 'success',
-      });
+      // let drafts = [];
+      // for (let i = 0; i < rows.length; i++) {
+      //   var item = rows.item(i);
+      //   drafts.push({
+      //     ...item,
+      //     json: JSON.parse(item.json),
+      //   });
+      // }
+      // yield put({
+      //   type: settingTypes.FETCH_DRAFTS_SUCCESS,
+      //   payload: drafts,
+      // });
+      // action.payload?.onXoaHanhDongThemMoi();
+      // pushMessage({
+      //   message: 'Dữ liệu của bạn sẽ được đồng bộ sau khi kết nối lại internet',
+      //   type: 'success',
+      // });
     }
-
     goBack();
   } catch (error) {
     console.log('helper', error, {...error});
@@ -161,9 +160,7 @@ function* createLayerWorker(action) {
         type: 'danger',
       });
   } finally {
-    yield put({
-      type: sharedTypes.DONE,
-    });
+    CBNative.hide();
   }
 }
 
@@ -173,9 +170,7 @@ export function* createLayerWatcher() {
 
 function* deleteLayerWorker(action) {
   try {
-    yield put({
-      type: sharedTypes.FETCHING,
-    });
+    CBNative.show();
 
     yield call(LayerService.deleteLayer, action.payload);
     const [pendingFeatures] = yield all([
@@ -192,12 +187,14 @@ function* deleteLayerWorker(action) {
       type: settingTypes.FETCH_PENDING_FEARTURES_SUCCESS,
       payload: pendingFeatures,
     });
+    pushMessage({
+      message: 'Xoá thông tin thực địa thành công',
+      type: 'success',
+    });
   } catch (error) {
     console.log('helper', error, {...error});
   } finally {
-    yield put({
-      type: sharedTypes.DONE,
-    });
+    CBNative.hide();
   }
 }
 
@@ -207,9 +204,7 @@ export function* deleteLayerWatcher() {
 
 function* updateBookmarkWorker(action) {
   try {
-    yield put({
-      type: sharedTypes.FETCHING,
-    });
+    CBNative.show();
     const {callback, ...rest} = action.payload;
     const res = yield call(LayerService.updateBookmark, rest);
     const bookmarks = yield call(LayerService.getBookmarks);
@@ -219,11 +214,9 @@ function* updateBookmarkWorker(action) {
     });
     callback();
   } catch (error) {
-    console.log('helper', error, {...error});
+    networkHandler(error);
   } finally {
-    yield put({
-      type: sharedTypes.DONE,
-    });
+    CBNative.hide();
   }
 }
 
@@ -233,9 +226,7 @@ export function* updateBookmarkWatcher() {
 
 function* createBookmarkWorker(action) {
   try {
-    yield put({
-      type: sharedTypes.FETCHING,
-    });
+    CBNative.show();
     const {callback, ...rest} = action.payload;
     const res = yield call(LayerService.createBookmark, rest);
     const bookmarks = yield call(LayerService.getBookmarks);
@@ -245,11 +236,9 @@ function* createBookmarkWorker(action) {
     });
     callback();
   } catch (error) {
-    console.log('helper', error, {...error});
+    networkHandler(error);
   } finally {
-    yield put({
-      type: sharedTypes.DONE,
-    });
+    CBNative.hide();
   }
 }
 
@@ -259,9 +248,7 @@ export function* createBookmarkWatcher() {
 
 function* deleteBookmarkWorker(action) {
   try {
-    yield put({
-      type: sharedTypes.FETCHING,
-    });
+    CBNative.show();
     const res = yield call(LayerService.deleteBookmark, action.payload);
     const bookmarks = yield call(LayerService.getBookmarks);
     yield put({
@@ -270,11 +257,9 @@ function* deleteBookmarkWorker(action) {
     });
     console.log(res);
   } catch (error) {
-    console.log('helper', error, {...error});
+    networkHandler(error);
   } finally {
-    yield put({
-      type: sharedTypes.DONE,
-    });
+    CBNative.hide();
   }
 }
 
@@ -286,12 +271,8 @@ function* refreshDataWorker(action) {
   try {
     const {isConnected} = yield call(NetInfo.fetch);
     action?.payload();
-
-    yield delay(1500);
     if (isConnected) {
-      yield put({
-        type: sharedTypes.FETCHING,
-      });
+      CBNative.show();
 
       const [resMe, pendingFeatures, {layers, features}, bookmarks] = yield all(
         [
@@ -352,22 +333,131 @@ function* refreshDataWorker(action) {
         payload: bookmarks,
       });
     } else {
-      // const resMe = yield call(querryStore, 'resMe');
-      // const drafs = yield call(querryAllDraft, resMe.id);
-      // yield put({
-      //   type: settingTypes.FETCH_DRAFTS_SUCCESS,
-      //   payload: {drafs, isConnected: false},
-      // });
     }
   } catch (error) {
-    console.log('helper', error, {...error});
+    networkHandler(error);
   } finally {
-    yield put({
-      type: sharedTypes.DONE,
-    });
+    CBNative.hide();
   }
 }
 
 export function* refreshDataWatcher() {
   yield takeLatest(settingTypes.REFRESH_DATA, refreshDataWorker);
+}
+
+function* layMauPhongXaWorker(action) {
+  try {
+    const {isConnected} = yield call(NetInfo.fetch);
+    if (isConnected) {
+      const {c, l, d} = yield select(
+        ({
+          settings: {
+            mauPhongXas: {current_page: c, last_page: l, data: d},
+          },
+        }) => ({
+          c,
+          l,
+          d,
+        }),
+      );
+      let nPage = c + 1;
+      if (action.payload == 1) {
+        nPage = 1;
+      }
+      if (nPage <= l) {
+        CBNative.show();
+        const res = yield call(layDSMauPhongXa, nPage);
+        yield put({
+          type: settingTypes.LAY_MAU_PHONG_XA_SUCCESS,
+          payload:
+            nPage == 1
+              ? {
+                  data: res.data,
+                  current_page: res.current_page,
+                  last_page: res.last_page,
+                }
+              : {
+                  data: [...d, res.data],
+                  current_page: res.current_page,
+                  last_page: res.last_page,
+                },
+        });
+      }
+    } else {
+      showMessage({
+        message: 'Không có kết nối mạng',
+        description: 'Vui lòng kiểm tra lại kết nội mạng để tiếp tục',
+        type: 'danger',
+      });
+    }
+  } catch (error) {
+    networkHandler(error);
+  } finally {
+    CBNative.hide();
+  }
+}
+
+export function* layMauPhongXaWatcher() {
+  yield takeLatest(settingTypes.LAY_MAU_PHONG_XA, layMauPhongXaWorker);
+}
+
+function* capNhatMauPhongXaWorker(action) {
+  try {
+    CBNative.show();
+    yield call(capNhatMauPhongXa, action.payload);
+    showMessage({
+      message: 'Thông báo',
+      description: action.payload.layerId
+        ? 'Cập nhật thông tin thành công'
+        : 'Tạo mới thông tin thành công',
+      type: 'success',
+    });
+    const res = yield call(layDSMauPhongXa, 1);
+    yield put({
+      type: settingTypes.LAY_MAU_PHONG_XA_SUCCESS,
+      payload: {
+        data: res.data,
+        current_page: res.current_page,
+        last_page: res.last_page,
+      },
+    });
+    goBack();
+  } catch (error) {
+    networkHandler(error);
+  } finally {
+    CBNative.hide();
+  }
+}
+
+export function* capNhatMauPhongXaWatcher() {
+  yield takeLatest(settingTypes.TAO_MAU_PHONG_XA, capNhatMauPhongXaWorker);
+}
+
+function* xoaMauPhongXaWorker(action) {
+  try {
+    CBNative.show();
+    yield call(xoaMauPhongXa, action.payload);
+    showMessage({
+      message: 'Thông báo',
+      description: 'Xoá thông tin mẫu phóng xạ thành công',
+      type: 'success',
+    });
+    const res = yield call(layDSMauPhongXa, 1);
+    yield put({
+      type: settingTypes.LAY_MAU_PHONG_XA_SUCCESS,
+      payload: {
+        data: res.data,
+        current_page: res.current_page,
+        last_page: res.last_page,
+      },
+    });
+  } catch (error) {
+    networkHandler(error);
+  } finally {
+    CBNative.hide();
+  }
+}
+
+export function* xoaMauPhongXaWatcher() {
+  yield takeLatest(settingTypes.XOA_MAU_PHONG_XA, xoaMauPhongXaWorker);
 }

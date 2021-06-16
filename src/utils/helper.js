@@ -79,3 +79,16 @@ export function generateUUID() {
     return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16);
   });
 }
+
+export const tryParseFloat = str => {
+  try {
+    const raw = parseFloat(str);
+    if (isNaN(raw)) {
+      return 0;
+    }
+    return raw;
+  } catch (error) {
+    console.log(error);
+    return 0;
+  }
+};

@@ -6,7 +6,6 @@ import {useTiming} from 'react-native-redash';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import {Colors} from '../../theme';
 
-const {Value, multiply, add} = Animated;
 const ELEVATION = 1;
 const DEFAULT_MAX_WIDTH = 960;
 
@@ -25,7 +24,6 @@ const Banner = ({actions, icon, children, visible}) => {
   const style1 = useAnimatedStyle(() => {
     return {
       height: osition.value * layout.height,
-      transform: [{translateY: layout.height * (position.value - 1)}],
     };
   }, [position, layout]);
   const style2 = useAnimatedStyle(() => {
@@ -33,8 +31,7 @@ const Banner = ({actions, icon, children, visible}) => {
       transform: [{translateY: layout.height * (position.value - 1)}],
     };
   }, [position, layout]);
-  const height = multiply(position, layout.height);
-  const translateY = multiply(add(position, -1), layout.height);
+
   return (
     <View style={[styles.wrapper]}>
       <Animated.View style={style1} />

@@ -11,6 +11,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import {useActionSheet} from '@expo/react-native-action-sheet';
 import ImagePicker from 'react-native-image-crop-picker';
 import Modal from 'react-native-modal';
 import {SafeAreaView} from 'react-native-safe-area-context';
@@ -34,6 +35,7 @@ import Block from '../../widgets/base/block';
 import Button from '../../widgets/base/button';
 import SizedBox from '../../widgets/base/sized_box';
 import ChangeUrlConfig from '../../widgets/change_url';
+import {moderateScale} from '../../utils/size_matter';
 
 const ProfilePage = ({onLogout, updateProfile, changeAvatar, profile}) => {
   const [inputValue, setinputValue] = useState('');
@@ -41,6 +43,8 @@ const ProfilePage = ({onLogout, updateProfile, changeAvatar, profile}) => {
   const [visible, setvisible] = useState(false);
   const [size, setsize] = useState(0);
   const [show, setshow] = useState(0);
+
+  const {showActionSheetWithOptions} = useActionSheet();
 
   const _onTakePicture = async () => {
     const size = await AppStorage.getVal('image_size');
@@ -63,11 +67,10 @@ const ProfilePage = ({onLogout, updateProfile, changeAvatar, profile}) => {
       default:
         break;
     }
-    ActionSheetIOS.showActionSheetWithOptions(
+    showActionSheetWithOptions(
       {
         options: ['Huỷ', 'Chụp ảnh', 'Chọn ảnh từ thư viện'],
-        destructiveButtonIndex: 2,
-        cancelButtonIndex: 0,
+        destructiveButtonIndex: 0,
       },
       async buttonIndex => {
         if (buttonIndex === 0) {
@@ -77,28 +80,8 @@ const ProfilePage = ({onLogout, updateProfile, changeAvatar, profile}) => {
             cropping: false,
             width,
             height,
+            compressImageQuality: 0.8,
           });
-
-          // const compressedImg = await ImageResizer.createResizedImage(
-          //   path,
-          //   width,
-          //   height,
-          //   'JPEG',
-          //   80,
-          // );
-
-          // const imagePath = `${
-          //   RNFS.DocumentDirectoryPath
-          // }/${new Date().toISOString()}.jpg`.replace(/:/g, '-');
-
-          // if (Platform.OS === 'ios') {
-          //   RNFS.copyAssetsFileIOS(compressedImg.uri, imagePath, 0, 0)
-          //     .then((res) => {})
-          //     .catch((err) => {
-          //       console.log('ERROR: image file write failed!!!');
-          //       console.log(err.message, err.code);
-          //     });
-          // }
 
           changeAvatar({...image, name: image.filename, uri: image.path});
         } else if (buttonIndex === 2) {
@@ -107,33 +90,8 @@ const ProfilePage = ({onLogout, updateProfile, changeAvatar, profile}) => {
               multiple: false,
               width,
               height,
+              compressImageQuality: 0.8,
             });
-
-            // const compressedImg = await ImageResizer.createResizedImage(
-            //   image.path,
-            //   width,
-            //   height,
-            //   'JPEG',
-            //   80,
-            // );
-
-            // const imagePath = `${RNFS.DocumentDirectoryPath}/${compressedImg.name}`.replace(
-            //   /:/g,
-            //   '-',
-            // );
-
-            // console.log(imagePath);
-
-            // if (Platform.OS === 'ios') {
-            //   const res = await RNFS.copyAssetsFileIOS(
-            //     compressedImg.uri,
-            //     imagePath,
-            //     0,
-            //     0,
-            //   );
-
-            //   console.log(res);
-            // }
 
             changeAvatar({...image, name: image.filename, uri: image.path});
           } catch (error) {
@@ -160,13 +118,14 @@ const ProfilePage = ({onLogout, updateProfile, changeAvatar, profile}) => {
       }
     };
     bootstrap();
-    Keyboard.addListener('keyboardDidShow', _keyboardDidShow);
-    Keyboard.addListener('keyboardDidHide', _keyboardDidHide);
+
+    const sub1 = Keyboard.addListener('keyboardDidShow', _keyboardDidShow);
+    const sub2 = Keyboard.addListener('keyboardDidHide', _keyboardDidHide);
 
     // cleanup function
     return () => {
-      Keyboard.removeListener('keyboardDidShow', _keyboardDidShow);
-      Keyboard.removeListener('keyboardDidHide', _keyboardDidHide);
+      sub1.remove();
+      sub2.remove();
     };
   }, []);
 
@@ -194,7 +153,7 @@ const ProfilePage = ({onLogout, updateProfile, changeAvatar, profile}) => {
         },
       ]}>
       <ScrollView showsVerticalScrollIndicator={false}>
-        <Block flex={1} padding={60}>
+        <Block flex={1} padding={moderateScale(60)}>
           <Block flex={1} style={styles.logoWrap} center>
             <Text style={styles.header}>TÀI KHOẢN</Text>
             <View>
@@ -264,26 +223,18 @@ const ProfilePage = ({onLogout, updateProfile, changeAvatar, profile}) => {
               value={imageSize()}
               isSetting
               onPress={() => {
-                if (Platform.OS == 'ios') {
-                  ActionSheetIOS.showActionSheetWithOptions(
-                    {
-                      options: [
-                        'Kích cỡ thực tế',
-                        '80%',
-                        '60%',
-                        '40%',
-                        'Cancel',
-                      ],
-                      destructiveButtonIndex: 4,
-                    },
-                    buttonIndex => {
-                      if (buttonIndex !== 4) {
-                        AppStorage.setVal('image_size', buttonIndex + '');
-                        setsize(buttonIndex);
-                      }
-                    },
-                  );
-                }
+                showActionSheetWithOptions(
+                  {
+                    options: ['Kích cỡ thực tế', '80%', '60%', '40%', 'Cancel'],
+                    destructiveButtonIndex: 4,
+                  },
+                  buttonIndex => {
+                    if (buttonIndex !== 4) {
+                      AppStorage.setVal('image_size', buttonIndex + '');
+                      setsize(buttonIndex);
+                    }
+                  },
+                );
               }}
             />
 
@@ -403,7 +354,6 @@ const ProfileItem = ({
         <View style={styles.proLeft}>
           <Text
             style={{
-              fontSize: 16,
               color: Colors.GRAY,
               textTransform: 'uppercase',
               fontWeight: '500',
@@ -414,7 +364,6 @@ const ProfileItem = ({
         <View style={styles.proMid}>
           <Text
             style={{
-              fontSize: 16,
               marginLeft: 10,
             }}>
             {value}
@@ -447,8 +396,8 @@ const ProfileItem = ({
 
 const styles = StyleSheet.create({
   cameraBtn: {
-    width: 50,
-    height: 50,
+    width: moderateScale(50),
+    height: moderateScale(50),
     borderRadius: 30,
     backgroundColor: Colors.WHITE,
     position: 'absolute',
@@ -457,45 +406,45 @@ const styles = StyleSheet.create({
   },
   sCamera: {
     backgroundColor: Colors.ACCENT,
-    width: 40,
-    height: 40,
+    width: moderateScale(40),
+    height: moderateScale(40),
     borderRadius: 20,
   },
   title: {
-    fontSize: 20,
-    fontWeight: '600',
+    fontSize: 18,
+    fontWeight: 'bold',
     marginBottom: 30,
     alignSelf: 'flex-start',
   },
   logoWrap: {backgroundColor: 'white', marginTop: 1},
   logoImg: {
-    width: 140,
-    height: 140,
+    width: moderateScale(140),
+    height: moderateScale(140),
     borderRadius: 70,
-    marginTop: 30,
+    marginTop: moderateScale(30),
   },
   txtName: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '500',
     marginTop: 10,
   },
   cate: {},
   cate1: {
     width: '100%',
-    paddingHorizontal: 30,
-    marginTop: 40,
-    paddingTop: 20,
+    paddingHorizontal: moderateScale(30),
+    marginTop: moderateScale(40),
+    paddingTop: moderateScale(20),
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: Colors.GRAY2,
     borderRadius: 8,
   },
   cate2: {
-    paddingTop: 20,
+    paddingTop: moderateScale(20),
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: Colors.GRAY2,
     borderRadius: 8,
-    paddingHorizontal: 30,
-    marginTop: 20,
+    paddingHorizontal: moderateScale(30),
+    marginTop: moderateScale(20),
   },
   logoutBtn: {
     width: 200,
@@ -520,17 +469,17 @@ const styles = StyleSheet.create({
     height: StyleSheet.hairlineWidth,
     width: '100%',
     backgroundColor: Colors.GRAY2,
-    marginTop: 10,
-    marginBottom: 15,
+    marginTop: moderateScale(10),
+    marginBottom: moderateScale(15),
   },
   header: {
-    fontWeight: '600',
-    fontSize: 22,
+    fontWeight: 'bold',
+    fontSize: 20,
   },
   btnModal: {
-    fontSize: 16,
+    fontSize: 14,
     textTransform: 'uppercase',
-    fontWeight: '600',
+    fontWeight: 'bold',
     marginTop: 10,
   },
 });

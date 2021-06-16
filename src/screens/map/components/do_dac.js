@@ -1,5 +1,6 @@
+import {useActionSheet} from '@expo/react-native-action-sheet';
 import React from 'react';
-import {ActionSheetIOS, Text, TouchableOpacity, View} from 'react-native';
+import {Text, TouchableOpacity, View} from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {Colors} from '../../../theme';
 import colors from '../../../theme/colors';
@@ -22,6 +23,8 @@ const DoDac = ({
   unitLine,
   onDeleteDraw,
 }) => {
+  const {showActionSheetWithOptions} = useActionSheet();
+
   const getString = (value, unit) => {
     switch (unit) {
       case 'Mét vuông':
@@ -88,9 +91,9 @@ const DoDac = ({
             style={styles.v5}
             onPress={() => {
               if (mode === 'polygon') {
-                ActionSheetIOS.showActionSheetWithOptions(
+                showActionSheetWithOptions(
                   {
-                    options: ['Cancel', 'Mét vuông', 'Héc-ta', 'Kilômét vuông'],
+                    options: ['Huỷ', 'Mét vuông', 'Héc-ta', 'Kilômét vuông'],
                     cancelButtonIndex: 0,
                   },
                   buttonIndex => {
@@ -106,9 +109,9 @@ const DoDac = ({
                   },
                 );
               } else {
-                ActionSheetIOS.showActionSheetWithOptions(
+                showActionSheetWithOptions(
                   {
-                    options: ['Cancel', 'Mét', 'Kilômét'],
+                    options: ['Huỷ', 'Mét', 'Kilômét'],
                     cancelButtonIndex: 0,
                   },
                   buttonIndex => {

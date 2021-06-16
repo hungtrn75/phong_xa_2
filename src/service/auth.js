@@ -3,9 +3,8 @@ import axios from '../utils/axios';
 
 export const login = async userdata => {
   const res = await axios.post(route.DANG_NHAP, userdata, {
-    timeout: 25000,
+    timeout: 10000,
   });
-  console.log(res);
 
   return res.data;
 };

@@ -32,7 +32,6 @@ export const createAxios = url => {
 axios.interceptors.request.use(
   async function (config) {
     const token = await Storage.getToken();
-    console.log(token);
     if (token) config.headers.Authorization = `Bearer ${token}`;
     return Promise.resolve(config);
   },

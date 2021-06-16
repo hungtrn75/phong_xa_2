@@ -12,12 +12,14 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import LoginPage from '../screens/auth/login_page';
 import Preview from '../screens/auth/preview';
 import SignupPage from '../screens/auth/signup_page';
+import DonViThongKe from '../screens/helpers/don_vi_thong_ke';
 import ImageViewer from '../screens/helpers/image_viewer';
 import AddPlaceModal from '../screens/helpers/modal';
 import HomePage from '../screens/home/home_page';
 import MapPage from '../screens/map/map';
 import ProfilePage from '../screens/profile/profile_page';
 import SplashScreen from '../screens/splash';
+import ThongTinYTe from '../screens/thong_tin_y_te/thong_tin_y_te';
 import {Colors} from '../theme';
 import {MaterialColors} from '../theme/colors';
 import {navigationRef} from './helper';
@@ -54,11 +56,11 @@ const MyAppTabs = () => {
     <Tab.Navigator
       screenOptions={({route}) => ({
         tabBarIcon: ({color}) => {
-          let iconName = 'home';
+          let iconName = 'hospital';
           const size = 28;
           switch (route.name) {
             case 'MAP':
-              return <Icon name={'map'} size={size} color={color} />;
+              return <Icon name={'google-maps'} size={size} color={color} />;
             case 'HOME':
               return <Icon name={'home'} size={size} color={color} />;
             case 'PROFILE':
@@ -71,12 +73,11 @@ const MyAppTabs = () => {
       tabBarOptions={{
         labelStyle: {
           fontSize: 16,
+          letterSpacing: 0.5,
+          fontWeight: 'bold',
         },
         activeTintColor: Colors.PRIMARY,
       }}>
-      {__DEV__ && (
-        <Tab.Screen name={'HOME'} component={HomePage} options={{}} />
-      )}
       <Tab.Screen
         name={'MAP'}
         component={MapPage}
@@ -84,6 +85,14 @@ const MyAppTabs = () => {
           tabBarLabel: 'Bản đồ',
         }}
       />
+      <Tab.Screen
+        name={'THONG_TIN_Y_TE'}
+        component={ThongTinYTe}
+        options={{
+          tabBarLabel: 'Thông tin y tế',
+        }}
+      />
+
       <Tab.Screen
         name={'PROFILE'}
         component={ProfilePage}
@@ -100,8 +109,7 @@ const AppNavigator = () => {
     Orientation.lockToLandscapeLeft();
   }, []);
   return (
-    <NavigationContainer ref={navigationRef}>
-      <StatusBar barStyle={'light-content'} backgroundColor={'white'} />
+    <NavigationContainer ref={navigationRef} theme={customDefaultTheme}>
       <AppStack.Navigator
         initialRouteName="Splash"
         screenOptions={{
@@ -134,47 +142,14 @@ const AppNavigator = () => {
           name={'ADD_PLACE'}
           component={AddPlaceModal}
           options={{
-            headerShown: false,
-            transitionSpec: {
-              open: TransitionSpecs.TransitionIOSSpec,
-              close: TransitionSpecs.TransitionIOSSpec,
-            },
-            gestureDirection: 'horizontal',
-            cardStyleInterpolator: ({current, next, layouts}) => {
-              return {
-                cardStyle: {
-                  transform: [
-                    {
-                      translateX: current.progress.interpolate({
-                        inputRange: [0, 1],
-                        outputRange: [layouts.screen.width, 0],
-                      }),
-                    },
-                    {
-                      rotate: current.progress.interpolate({
-                        inputRange: [0, 1],
-                        outputRange: [1, 0],
-                      }),
-                    },
-                    {
-                      scale: next
-                        ? next.progress.interpolate({
-                            inputRange: [0, 1],
-                            outputRange: [1, 0.9],
-                          })
-                        : 1,
-                    },
-                  ],
-                },
-                overlayStyle: {
-                  opacity: current.progress.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [0, 0.5],
-                  }),
-                },
-              };
-            },
-            gestureEnabled: true,
+            headerTitle: 'Thông tin biểu mẫu',
+          }}
+        />
+        <AppStack.Screen
+          name={'DON_VI_THONG_KE'}
+          component={DonViThongKe}
+          options={{
+            headerTitle: 'Đơn vị thống kê',
           }}
         />
         <AppStack.Screen

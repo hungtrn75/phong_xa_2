@@ -4,6 +4,7 @@ import RNBootSplash from 'react-native-bootsplash';
 import {connect} from 'react-redux';
 import {bindActionCreators} from 'redux';
 import {authActions} from '../redux/state/auth_redux';
+import colors from '../theme/colors';
 import Block from '../widgets/base/block';
 
 const SplashScreen = ({fetchMe}) => {
@@ -22,12 +23,12 @@ const SplashScreen = ({fetchMe}) => {
       <Image
         source={require('../assets/images/phongxa.png')}
         style={{
-          width: 200,
-          height: 200,
+          width: 150,
+          height: 150,
           marginBottom: 20,
         }}
       />
-      <ActivityIndicator size="large" />
+      <ActivityIndicator size="large" color={colors.PRIMARY} />
     </Block>
   );
 };

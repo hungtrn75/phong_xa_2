@@ -6,6 +6,7 @@ export const networkHandler = (err, message = 'Có lỗi xảy ra') => {
   if (isNetworkError) {
     showMessage({
       message: 'Không có kết nối mạng!',
+      description: 'Vui lòng thử lại sau',
       type: 'danger',
       icon: {icon: 'danger', position: 'left'},
     });

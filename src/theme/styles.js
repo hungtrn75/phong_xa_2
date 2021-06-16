@@ -1,4 +1,13 @@
+import {DefaultTheme} from '@react-navigation/native';
 import {StyleSheet} from 'react-native';
+
+export const customDefaultTheme = {
+  ...DefaultTheme,
+  colors: {
+    ...DefaultTheme.colors,
+    background: 'white',
+  },
+};
 
 const ShareStyles = StyleSheet.create({
   shadow: {

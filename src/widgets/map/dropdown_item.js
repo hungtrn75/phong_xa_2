@@ -20,7 +20,7 @@ const DropdownItem = ({iconName, onPress, isActive, tooltip}) => {
     [isActive],
   );
   const onLongPress = useCallback(() => {
-    Alert.alert(tooltip);
+    Alert.alert('Thông tin chức năng', tooltip);
   }, [tooltip]);
   return (
     <TouchableOpacity

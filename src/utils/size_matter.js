@@ -7,8 +7,8 @@ const [shortDimension, longDimension] =
 
 // Default guideline sizes are based on standard ~5" screen mobile device
 // This lib uses 350dp x 680dp as guideline sizes
-const guidelineBaseWidth = 411.42857142857144;
-const guidelineBaseHeight = 683.4285714285714;
+const guidelineBaseWidth = 1280;
+const guidelineBaseHeight = 844;
 
 // Will return a linear scaled result of the provided size, based on your device's screen width.
 const scale = size => (shortDimension / guidelineBaseWidth) * size;

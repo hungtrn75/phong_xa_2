@@ -2,8 +2,8 @@ import color from 'color';
 import React from 'react';
 import isEqual from 'react-fast-compare';
 import {StyleSheet} from 'react-native';
-import Animated from 'react-native-reanimated';
-import {useTimingTransition} from 'react-native-redash';
+import Animated, {useAnimatedStyle} from 'react-native-reanimated';
+import {useTiming} from 'react-native-redash';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import {Colors} from '../../theme';
 import {MaterialColors} from '../../theme/colors';
@@ -20,12 +20,6 @@ const Fab = React.memo(
     style,
     onPress,
   }) => {
-    const transition = useTimingTransition(visible);
-    const scale = Animated.interpolate(transition, {
-      inputRange: [0, 1],
-      outputRange: [0, 1],
-      extrapolate: Animated.Extrapolate.CLAMP,
-    });
     const fabStyles = [
       styles.standard,
       small && styles.small,
@@ -33,12 +27,8 @@ const Fab = React.memo(
         backgroundColor: disabled
           ? MaterialColors.grey.val(300)
           : backgroundColor,
-        transform: [
-          {
-            scale,
-          },
-        ],
       },
+
       disabled && styles.disabled,
       style,
     ];
@@ -50,7 +40,7 @@ const Fab = React.memo(
 
     if (disabled)
       return (
-        <Block animated style={fabStyles} middle center ripple>
+        <Block style={fabStyles} middle center ripple>
           <MaterialCommunityIcons
             name={icon}
             size={24}
@@ -60,14 +50,7 @@ const Fab = React.memo(
       );
 
     return (
-      <Block
-        animated
-        style={fabStyles}
-        disabled
-        onPress={onPress}
-        middle
-        center
-        ripple>
+      <Block style={fabStyles} disabled onPress={onPress} middle center ripple>
         <MaterialCommunityIcons name={icon} size={24} color={foregroundColor} />
       </Block>
     );
@@ -82,6 +65,9 @@ const styles = StyleSheet.create({
     width: 56,
     borderRadius: 28,
     elevation: 6,
+    position: 'absolute',
+    bottom: 15,
+    right: 15,
   },
   small: {
     height: 40,

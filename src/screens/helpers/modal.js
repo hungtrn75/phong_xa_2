@@ -1,22 +1,18 @@
 import MapboxGL from '@react-native-mapbox-gl/maps';
 import {Formik} from 'formik';
 import moment from 'moment';
-import React, {useEffect, useState} from 'react';
+import React, {useCallback, useEffect, useState} from 'react';
 import isEqual from 'react-fast-compare';
 import {
-  ActionSheetIOS,
   Dimensions,
-  Image,
   ScrollView,
   StyleSheet,
+  Text,
   TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
-import DocumentPicker from 'react-native-document-picker';
-import {FlatList} from 'react-native-gesture-handler';
-import ImagePicker from 'react-native-image-crop-picker';
-import ImageResizer from 'react-native-image-resizer';
+import {TouchableWithoutFeedback} from 'react-native-gesture-handler';
 import DateTimePicker from 'react-native-modal-datetime-picker';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -24,13 +20,13 @@ import {connect} from 'react-redux';
 import {bindActionCreators} from 'redux';
 import {SCREEN_WIDTH, STATUSBAR_HEIGHT} from '../../constants';
 import {settingsActions} from '../../redux/state/setting_redux';
-import {Colors, ShareStyles} from '../../theme';
+import {ShareStyles} from '../../theme';
 import colors from '../../theme/colors';
-import AppStorage from '../../utils/storage';
 import Block from '../../widgets/base/block';
 import Button from '../../widgets/base/button';
+import * as yup from 'yup';
 import SizedBox from '../../widgets/base/sized_box';
-import Text from '../../widgets/base/text';
+import {moderateScale} from '../../utils/size_matter';
 
 MapboxGL.setAccessToken(
   'pk.eyJ1IjoiaHV1bmdoaXBoYW0iLCJhIjoiY2pseXg2ZTl0MXRkdDN2b2J5bzFpbmlhZSJ9.cChkzU6jLVXx4v75qo_dfQ',
@@ -40,200 +36,192 @@ const {width, height} = Dimensions.get('window');
 
 const properties = [];
 
+const t1 = 'Trường bắt buộc';
+
+const validationSchema = yup.object().shape({
+  number_people_infected: yup.string().required(t1),
+  number_people_bleached: yup.string().required(t1),
+  number_house_affected: yup.string().required(t1),
+  number_house_bleached: yup.string().required(t1),
+  region_bleached: yup.string().required(t1),
+  statistics_name_unit: yup.object().nullable().required(t1),
+});
+
+const validationSchema2 = yup.object().shape({
+  available_bed: yup.string().required(t1),
+  number_people_cured: yup.string().required(t1),
+  number_people_death: yup.string().required(t1),
+  number_people_infected: yup.string().required(t1),
+  statistics_name_unit: yup.object().nullable().required(t1),
+});
+
+const validationSchema3 = yup.object().shape({
+  hoat_do_ra_226: yup.string().required(t1),
+  hoat_do_th_232: yup.string().required(t1),
+  hoat_do_k_40: yup.string().required(t1),
+  suat_lieu_gamma_trong_data: yup.string().required(t1),
+  hoat_do_radi_tuong_duong: yup.string().required(t1),
+  date_time: yup.date().required(t1),
+});
+
+const values1 = {
+  number_people_infected: '0',
+  number_people_bleached: '0',
+  number_house_affected: '0',
+  number_house_bleached: '0',
+  region_bleached: '',
+  statistics_name_unit: null,
+};
+const values2 = {
+  available_bed: '0',
+  number_people_cured: '0',
+  number_people_death: '0',
+  number_people_infected: '0',
+  statistics_name_unit: null,
+};
+
+const values3 = {
+  date_time: moment().toDate(),
+  hoat_do_ra_226: '0',
+  hoat_do_th_232: '0',
+  hoat_do_k_40: '0',
+  suat_lieu_gamma_trong_data: '0',
+  hoat_do_radi_tuong_duong: '0',
+};
+
 const AddPlaceModal = ({
   navigation,
   route,
-  settings,
-  getFormField,
+  taoMauPhongXa,
   createLayer,
-  isFetching,
+  profile,
 }) => {
-  const [photos, setPhotos] = useState([]);
-  const [documents, setDocuments] = useState({
-    totalSize: 0,
-    items: [],
-  });
+  const {edit, onXoaHanhDongThemMoi, geometry, type} = route.params.formValues;
+
+  const [values, setValues] = useState(
+    type == 1 ? values1 : type == 2 ? values2 : values3,
+  );
+
+  // const [photos, setPhotos] = useState([]);
+  // const [documents, setDocuments] = useState({
+  //   totalSize: 0,
+  //   items: [],
+  // });
 
   //EFFECTS
   useEffect(() => {
-    const {
-      edit,
-      layer: {id},
-    } = route.params.formValues;
-    // getFormField({formId: id, edit});
-  }, []);
-
-  const _onTakePicture = () => {
-    ActionSheetIOS.showActionSheetWithOptions(
-      {
-        options: ['Huỷ', 'Chụp ảnh', 'Chọn ảnh từ thư viện'],
-        destructiveButtonIndex: 2,
-        cancelButtonIndex: 0,
-      },
-      async buttonIndex => {
-        const size = await AppStorage.getVal('image_size');
-
-        if (buttonIndex === 0) {
-          // cancel action
-        } else if (buttonIndex === 1) {
-          const image = await ImagePicker.openCamera({
-            cropping: false,
+    if (edit) {
+      const t1 = str => (str ? `${str}` : '0');
+      switch (type) {
+        case 1:
+          let {
+            number_people_infected: n1,
+            number_people_bleached,
+            number_house_affected,
+            number_house_bleached,
+            region_bleached,
+            statistics_name_unit,
+          } = edit.item;
+          setValues({
+            number_people_infected: t1(n1),
+            number_people_bleached: t1(number_people_bleached),
+            number_house_affected: t1(number_house_affected),
+            number_house_bleached: t1(number_house_bleached),
+            region_bleached,
+            statistics_name_unit,
           });
+          break;
+        case 2:
+          let {
+            available_bed,
+            number_people_cured,
+            number_people_death,
+            number_people_infected,
+            report_name_unit,
+          } = edit.item;
+          setValues({
+            available_bed: t1(available_bed),
+            number_people_cured: t1(number_people_cured),
+            number_people_death: t1(number_people_death),
+            number_people_infected: t1(number_people_infected),
+            statistics_name_unit: report_name_unit,
+          });
+          break;
+        case 3:
+          let {
+            date_time,
+            hoat_do_ra_226,
+            hoat_do_th_232,
+            hoat_do_k_40,
+            suat_lieu_gamma_trong_data,
+            hoat_do_radi_tuong_duong,
+          } = edit.item;
+          setValues({
+            date_time: moment(date_time, 'DD/MM/YYYY HH:mm:ss').toDate(),
+            hoat_do_ra_226: t1(hoat_do_ra_226),
+            hoat_do_th_232: t1(hoat_do_th_232),
+            hoat_do_k_40: t1(hoat_do_k_40),
+            suat_lieu_gamma_trong_data: t1(suat_lieu_gamma_trong_data),
+            hoat_do_radi_tuong_duong: t1(hoat_do_radi_tuong_duong),
+          });
+          break;
 
-          let {width, height, path} = image;
-
-          switch (size) {
-            case '1':
-              width *= 0.8;
-              height *= 0.8;
-              break;
-            case '2':
-              width *= 0.6;
-              height *= 0.6;
-              break;
-            case '3':
-              width *= 0.4;
-              height *= 0.4;
-              break;
-
-            default:
-              break;
-          }
-
-          const compressedImg = await ImageResizer.createResizedImage(
-            path,
-            width,
-            height,
-            'JPEG',
-            80,
-          );
-          setPhotos([...photos, compressedImg]);
-        } else if (buttonIndex === 2) {
-          try {
-            const images = await ImagePicker.openPicker({
-              multiple: true,
-            });
-            const promises = images.map(async image => {
-              let {width, height} = image;
-              switch (size) {
-                case '1':
-                  width *= 0.8;
-                  height *= 0.8;
-                  break;
-                case '2':
-                  width *= 0.6;
-                  height *= 0.6;
-                  break;
-                case '3':
-                  width *= 0.4;
-                  height *= 0.4;
-                  break;
-
-                default:
-                  break;
-              }
-              const compressedImg = await ImageResizer.createResizedImage(
-                image.path,
-                width,
-                height,
-                'JPEG',
-                80,
-              );
-              return compressedImg;
-            });
-
-            const resultImages = await Promise.all(promises);
-            setPhotos([...photos, ...resultImages]);
-          } catch (error) {
-            console.log(error);
-          }
-        }
-      },
-    );
-  };
-
-  const onDocumentPicker = async () => {
-    try {
-      const results = await DocumentPicker.pickMultiple({
-        type: [DocumentPicker.types.allFiles],
-      });
-      //@ts-ignore
-      const size = results.reduce((acc, el) => (acc += el.size), 0);
-      setDocuments({
-        totalSize: documents.totalSize + size,
-        items: [...documents.items, ...results],
-      });
-    } catch (err) {
-      if (DocumentPicker.isCancel(err)) {
-        // User cancelled the picker, exit any dialogs or menus and move on
-      } else {
-        throw err;
+        default:
+          break;
       }
     }
-  };
+  }, []);
 
-  const renderPhoto = ({item, index}) => {
-    return (
-      <View
-        key={item.name}
-        style={{
-          // backgroundColor: 'red',
-          marginRight: 15,
-          borderRadius: 4,
-        }}>
-        <Image
-          style={{
-            width: 100,
-            height: 100,
-            borderRadius: 4,
-          }}
-          resizeMode="cover"
-          source={{uri: item.uri}}
-        />
-        <TouchableOpacity
-          onPress={onDeletePhoto(index)}
-          style={{
-            position: 'absolute',
-            right: 5,
-            top: 5,
-            zIndex: 8,
-            borderRadius: 20,
-          }}>
-          <Icon name="close" color={Colors.ERROR} size={28} />
-        </TouchableOpacity>
-      </View>
-    );
-  };
-
-  const renderDocumentItem = ({item, index}) => {
-    return (
-      <Block row center key={item.name}>
-        <Block flex={1}>
-          <Text subtitle1>
-            {index + 1}. {item.name} - {Math.round(item.size / 1000)} KB
-          </Text>
-        </Block>
-        <TouchableOpacity
-          onPress={onDeleteDocument(index)}
-          style={{
-            marginRight: 10,
-            marginVertical: 2.5,
-          }}>
-          <Icon name="close" size={28} color={Colors.ERROR} />
-        </TouchableOpacity>
-      </Block>
-    );
-  };
-
-  const onDeletePhoto = index => () => {
-    photos.splice(index, 1);
-    setPhotos([...photos]);
-  };
-
-  const onDeleteDocument = index => () => {
-    documents.totalSize = documents.totalSize - documents.items[index].size;
-    documents.items.splice(index, 1);
-    setDocuments({...documents, items: [...documents.items]});
+  const onSubmit = (values, actions) => {
+    const sendData = {};
+    //@ts-ignore
+    Object.entries(values).map(([key, value]) => {
+      if (Array.isArray(value)) {
+        sendData[key] = value[0].id;
+      } else if (value instanceof Date) {
+        sendData[key] = moment(value).format('DD/MM/YYYY HH:mm:ss');
+      } else {
+        sendData[key] = value;
+      }
+    });
+    if (type == 3) {
+      const data2 = {
+        layerId: edit?.item?.id,
+        geometry,
+        values: sendData,
+      };
+      console.log(JSON.stringify(data2, null, '\t'));
+      taoMauPhongXa(data2);
+      return;
+    }
+    const data = {
+      type,
+      edit,
+      onXoaHanhDongThemMoi,
+      values:
+        type == 1
+          ? {
+              ...sendData,
+              release_date: moment().format('DD/MM/YYYY HH:mm:ss'),
+              report_name_user: profile?.user,
+            }
+          : {
+              ...sendData,
+              release_date: moment().format('DD/MM/YYYY HH:mm:ss'),
+              report_name_user: profile?.user,
+              report_name_unit: sendData.statistics_name_unit,
+            },
+      geometry:
+        geometry?.type === 'Polygon'
+          ? {
+              type: 'Polygon',
+              coordinates: [geometry.coordinates],
+            }
+          : geometry,
+    };
+    // console.log(JSON.stringify(data, null, '\t'));
+    // console.log(profile);
+    createLayer(data);
   };
 
   if (properties.length)
@@ -242,174 +230,201 @@ const AddPlaceModal = ({
         <Text size={16} body1>
           Biểu mẫu chưa có thông tin cần điền
         </Text>
-        <SizedBox height={10} />
-        <Block row center onPress={navigation.goBack}>
-          <Icon name="chevron-left" size={32} color={colors.BUTTON} />
-          <Text
-            style={{
-              fontSize: 16,
-              fontWeight: '500',
-              color: colors.BUTTON,
-              marginBottom: 2.5,
-            }}>
-            Quay lại
-          </Text>
-        </Block>
       </Block>
     );
 
   return (
     <SafeAreaView style={{flex: 1}}>
       <ScrollView>
-        <SizedBox height={90 + STATUSBAR_HEIGHT} />
         <Formik
-          initialValues={{
-            number_people_infected: '0',
-            number_people_bleached: '0',
-            number_house_affected: '0',
-            number_house_bleached: '0',
-            region_bleached: '',
-          }}
+          initialValues={values}
+          validationSchema={
+            type == 1
+              ? validationSchema
+              : type == 2
+              ? validationSchema2
+              : validationSchema3
+          }
           enableReinitialize
-          onSubmit={(values, actions) => {
-            const sendData = {};
-            //@ts-ignore
-            Object.entries(values).map(([key, value]) => {
-              if (Array.isArray(value)) {
-                sendData[key] = value[0].id;
-              } else if (value instanceof Date) {
-                sendData[key] = moment(value).format('DD/MM/YYYY');
-              } else {
-                sendData[key] = value;
-              }
-            });
-            const {
-              edit,
-              layer: {id},
-              onXoaHanhDongThemMoi,
-              geometry,
-            } = route.params.formValues;
-
-            createLayer({
-              edit,
-              onXoaHanhDongThemMoi: onXoaHanhDongThemMoi,
-              documents: documents.items,
-              photos,
-              mobile_form_id: settings.formFields?.id,
-              values: sendData,
-              geometry:
-                geometry.type === 'Polygon'
-                  ? {
-                      type: 'Polygon',
-                      coordinates: [geometry.coordinates],
-                    }
-                  : geometry,
-            });
-          }}>
+          validateOnChange={false}
+          onSubmit={onSubmit}>
           {({handleSubmit, handleChange, values, setFieldValue, errors}) => {
+            if (type == 1)
+              return (
+                <Block>
+                  <Block row wrap space="around">
+                    <FormPicker
+                      required
+                      placeholder="Đơn vị thống kê"
+                      navigation={navigation}
+                      value={values.statistics_name_unit}
+                      error={errors.statistics_name_unit}
+                      onChange={val =>
+                        setFieldValue('statistics_name_unit', val)
+                      }
+                    />
+                    <TextInputIOS
+                      required
+                      placeholder={'Số người nhiễm xạ'}
+                      value={values.number_people_infected}
+                      onChangeText={handleChange('number_people_infected')}
+                      error={errors.number_people_infected}
+                      keyboardType="numeric"
+                    />
+                    <TextInputIOS
+                      required
+                      placeholder={'Số người tẩy xạ'}
+                      value={values.number_people_bleached}
+                      onChangeText={handleChange('number_people_bleached')}
+                      error={errors.number_people_bleached}
+                      keyboardType="numeric"
+                    />
+                    <TextInputIOS
+                      required
+                      placeholder={'Số nhà ảnh hưởng'}
+                      value={values.number_house_affected}
+                      onChangeText={handleChange('number_house_affected')}
+                      error={errors.number_house_affected}
+                      keyboardType="numeric"
+                    />
+                    <TextInputIOS
+                      required
+                      placeholder={'Số nhà được tẩy xạ'}
+                      value={values.number_house_bleached}
+                      onChangeText={handleChange('number_house_bleached')}
+                      error={errors.number_house_bleached}
+                      keyboardType="numeric"
+                    />
+                    <TextInputIOS
+                      required
+                      placeholder={'Khu vực được tẩy xạ'}
+                      value={values.region_bleached}
+                      onChangeText={handleChange('region_bleached')}
+                      error={errors.region_bleached}
+                    />
+                  </Block>
+                  <Block center margin={[20, 0, 0]}>
+                    <Button.Ripple
+                      title="Gửi thông tin"
+                      onPress={handleSubmit}
+                    />
+                  </Block>
+                </Block>
+              );
+            if (type == 2)
+              return (
+                <Block>
+                  <Block row wrap space="around">
+                    <FormPicker
+                      required
+                      placeholder="Đơn vị thống kê"
+                      navigation={navigation}
+                      value={values.statistics_name_unit}
+                      onChange={val =>
+                        setFieldValue('statistics_name_unit', val)
+                      }
+                      error={errors.statistics_name_unit}
+                    />
+                    <TextInputIOS
+                      required
+                      placeholder={'Số giường trống'}
+                      value={values.available_bed}
+                      onChangeText={handleChange('available_bed')}
+                      error={errors.available_bed}
+                      keyboardType="numeric"
+                    />
+                    <TextInputIOS
+                      required
+                      placeholder={'Số người nhiễm xạ'}
+                      value={values.number_people_infected}
+                      onChangeText={handleChange('number_people_infected')}
+                      error={errors.number_people_infected}
+                      keyboardType="numeric"
+                    />
+                    <TextInputIOS
+                      required
+                      placeholder={'Số người chữa khỏi'}
+                      value={values.number_people_cured}
+                      onChangeText={handleChange('number_people_cured')}
+                      error={errors.number_people_cured}
+                      keyboardType="numeric"
+                    />
+                    <TextInputIOS
+                      required
+                      placeholder={'Số người tử vong'}
+                      value={values.number_people_death}
+                      onChangeText={handleChange('number_people_death')}
+                      error={errors.number_people_death}
+                      keyboardType="numeric"
+                    />
+                    <SizedBox width={width * 0.45} />
+                  </Block>
+                  <Block center margin={[20, 0, 0]}>
+                    <Button.Ripple
+                      title="Gửi thông tin"
+                      onPress={handleSubmit}
+                    />
+                  </Block>
+                </Block>
+              );
             return (
               <Block>
                 <Block row wrap space="around">
-                  <TextInputIOS
-                    placeholder={'Số người bị lây nhiễm'}
-                    value={values.number_people_infected}
-                    onChangeText={handleChange('number_people_infected')}
-                    error={errors.number_people_infected}
+                  <DatePickerIOS
+                    placeholder="Thời gian"
+                    value={values.date_time}
+                    setFieldValue={setFieldValue}
+                    name="date_time"
                   />
                   <TextInputIOS
-                    placeholder={'Số người bị nhiễm'}
-                    value={values.number_people_bleached}
-                    onChangeText={handleChange('number_people_bleached')}
-                    error={errors.number_people_bleached}
-                  />
-                  <TextInputIOS
-                    placeholder={'Số nhà bị ảnh hưởng'}
-                    value={values.number_house_affected}
-                    onChangeText={handleChange('number_house_affected')}
-                    error={errors.number_house_affected}
-                  />
-                  <TextInputIOS
-                    placeholder={'Số nhà bị nhiễm'}
-                    value={values.number_house_bleached}
-                    onChangeText={handleChange('number_house_bleached')}
-                    error={errors.number_house_bleached}
-                  />
-                  <TextInputIOS
-                    placeholder={'Khu vực ảnh hưởng'}
-                    value={values.region_bleached}
-                    onChangeText={handleChange('region_bleached')}
-                    error={errors.region_bleached}
+                    required
+                    placeholder={'Hoạt độ Ra-226 (Bq/kg)'}
+                    value={values.hoat_do_ra_226}
+                    onChangeText={handleChange('hoat_do_ra_226')}
+                    error={errors.hoat_do_ra_226}
                     keyboardType="numeric"
                   />
-
-                  <SizedBox width={SCREEN_WIDTH * 0.4} />
+                  <TextInputIOS
+                    required
+                    placeholder={'Hoạt độ Th-232 (Bq/kg)'}
+                    value={values.hoat_do_th_232}
+                    onChangeText={handleChange('hoat_do_th_232')}
+                    error={errors.hoat_do_th_232}
+                    keyboardType="numeric"
+                  />
+                  <TextInputIOS
+                    required
+                    placeholder={'Hoạt độ K-40 (Bq/kg)'}
+                    value={values.hoat_do_k_40}
+                    onChangeText={handleChange('hoat_do_k_40')}
+                    error={errors.hoat_do_k_40}
+                    keyboardType="numeric"
+                  />
+                  <TextInputIOS
+                    required
+                    placeholder={'Suất liều gamma trong đất (nGy/h)'}
+                    value={values.suat_lieu_gamma_trong_data}
+                    onChangeText={handleChange('suat_lieu_gamma_trong_data')}
+                    error={errors.suat_lieu_gamma_trong_data}
+                    keyboardType="numeric"
+                  />
+                  <TextInputIOS
+                    required
+                    placeholder={'Hoạt độ Rađi tương đương (Bq/kg)'}
+                    value={values.hoat_do_radi_tuong_duong}
+                    onChangeText={handleChange('hoat_do_radi_tuong_duong')}
+                    error={errors.hoat_do_radi_tuong_duong}
+                    keyboardType="numeric"
+                  />
+                  <SizedBox width={width * 0.45} />
                 </Block>
-                <Block row space="around" style={styles.inject}>
-                  <View style={styles.it}>
-                    <TouchableOpacity
-                      style={styles.btn}
-                      onPress={_onTakePicture}>
-                      <Icon name="file-image" size={24} color={colors.BUTTON} />
-                      <Text style={styles.txtBtn}>Ảnh chụp</Text>
-                    </TouchableOpacity>
-                    <FlatList
-                      horizontal
-                      data={photos}
-                      keyExtractor={(item, index) => item.name}
-                      renderItem={renderPhoto}
-                    />
-                  </View>
-                  <View style={styles.it}>
-                    <Block row center>
-                      <TouchableOpacity
-                        style={[styles.btn2]}
-                        onPress={onDocumentPicker}>
-                        <Icon
-                          name="attachment"
-                          size={24}
-                          color={colors.BUTTON}
-                        />
-                        <Text style={styles.txtBtn}>
-                          Tệp đính kèm
-                          {documents.totalSize
-                            ? ` - ${Math.round(documents.totalSize / 1000)} KB`
-                            : ''}
-                        </Text>
-                      </TouchableOpacity>
-                    </Block>
-                    <View style={{height: 100}}>
-                      <FlatList
-                        data={documents.items}
-                        keyExtractor={(item, index) => item.name}
-                        renderItem={renderDocumentItem}
-                      />
-                    </View>
-                  </View>
-                </Block>
-                <Block center>
+                <Block center margin={[20, 0, 0]}>
                   <Button.Ripple title="Gửi thông tin" onPress={handleSubmit} />
                 </Block>
               </Block>
             );
           }}
         </Formik>
-        <View style={styles.segContaine}>
-          <Block flex={1} center middle>
-            <Text style={styles.txtSeg}>Thông tin biểu mẫu</Text>
-          </Block>
-        </View>
-        <Block row style={styles.backBtn} center onPress={navigation.goBack}>
-          <Icon name="chevron-left" size={32} color={colors.BUTTON} />
-          <Text
-            style={{
-              fontSize: 16,
-              fontWeight: '500',
-              color: colors.BUTTON,
-              marginBottom: 2.5,
-            }}>
-            Quay lại
-          </Text>
-        </Block>
       </ScrollView>
     </SafeAreaView>
   );
@@ -417,14 +432,14 @@ const AddPlaceModal = ({
 
 const mapStateToProps = state => ({
   settings: state.settings,
-  isFetching: state.share.isFetching,
+  profile: state.auth.profile,
 });
 
 const mapDispatchToProps = dispatch =>
   bindActionCreators(
     {
-      getFormField: settingsActions.getFormField,
       createLayer: settingsActions.createLayer,
+      taoMauPhongXa: settingsActions.taoMauPhongXa,
     },
     dispatch,
   );
@@ -459,20 +474,40 @@ const TextInputIOS = React.memo(
   isEqual,
 );
 
+const FormPicker = React.memo(
+  ({navigation, placeholder, onChange, value, error, required = false}) => {
+    const onPress = useCallback(() => {
+      navigation.navigate('DON_VI_THONG_KE', {
+        onChange,
+      });
+    }, [onChange, navigation]);
+    return (
+      <View style={styles.wrapTI}>
+        <Text style={styles.title}>
+          {placeholder}
+          <Text style={styles.error}>{required ? '(*)' : ''}</Text>
+          <Text style={styles.error}>{error ? '  ' + error : ''}</Text>
+        </Text>
+        <TouchableWithoutFeedback style={styles.input2} onPress={onPress}>
+          <Text style={styles.t1} numberOfLines={1} ellipsizeMode="middle">
+            {value ? value?.name : 'Nhấn để tìm kiếm'}
+          </Text>
+          <Icon name="chevron-down" size={20} />
+        </TouchableWithoutFeedback>
+      </View>
+    );
+  },
+  isEqual,
+);
+
 const DatePickerIOS = React.memo(
   ({placeholder, value, setFieldValue, name}) => {
     const [show, setVisible] = useState(false);
     const hide = () => setVisible(false);
     const onShow = () => setVisible(true);
     const setDate = date => {
-      const prevDate = moment().format('YYYY/MM/DD');
-      const nowDate = moment(date).format('YYYY/MM/DD');
-      if (nowDate > prevDate) {
-        setVisible(false);
-      } else {
-        setVisible(false);
-        setFieldValue(name, date);
-      }
+      hide();
+      setFieldValue(name, date);
     };
     return (
       <TouchableOpacity onPress={onShow}>
@@ -506,22 +541,38 @@ const styles = StyleSheet.create({
     marginLeft: 10,
   },
   wrapTI: {
-    marginBottom: 20,
+    marginBottom: moderateScale(20),
   },
   title: {
-    fontWeight: '500',
-    color: Colors.BORDER,
-    fontSize: 16,
+    fontWeight: 'bold',
     textAlign: 'left',
     marginBottom: 12.5,
+    letterSpacing: 0.5,
   },
   input: {
-    width: SCREEN_WIDTH * 0.4,
-    height: 50,
-    backgroundColor: colors.GRAY2,
+    fontSize: 15,
+    width: width * 0.45,
+    height: moderateScale(50, 0.3),
+    backgroundColor: colors.GRAY3,
     borderRadius: 8,
     paddingHorizontal: 10,
     fontSize: 18,
+    letterSpacing: 0.5,
+  },
+  input2: {
+    fontSize: 15,
+    width: width * 0.45,
+    height: moderateScale(50, 0.3),
+    backgroundColor: colors.GRAY3,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    flexDirection: 'row',
+  },
+  t1: {
+    fontSize: 15,
+    letterSpacing: 0.5,
   },
   insetBottom: {
     height: 103.5,
@@ -551,12 +602,13 @@ const styles = StyleSheet.create({
   },
   txtBtn: {
     marginLeft: 5,
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
     color: colors.BUTTON,
   },
   it: {
-    width: SCREEN_WIDTH * 0.4,
+    fontSize: 15,
+    width: width * 0.45,
   },
   inject: {
     marginTop: 10,
@@ -604,7 +656,7 @@ const styles = StyleSheet.create({
   },
   txtTool: {
     marginLeft: 10,
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
   },
   actions: {
@@ -629,7 +681,7 @@ const styles = StyleSheet.create({
   },
   txtAction: {
     fontWeight: '600',
-    fontSize: 16,
+    fontSize: 15,
     color: colors.WHITE,
   },
   backBtn: {
@@ -638,6 +690,7 @@ const styles = StyleSheet.create({
     top: STATUSBAR_HEIGHT + 20,
   },
   dateInput: {
-    fontSize: 16,
+    fontSize: 15,
+    letterSpacing: 0.5,
   },
 });
