@@ -33,6 +33,7 @@ export const settingTypes = {
   LAY_MAU_PHONG_XA_SUCCESS: '@SETTING/LAY_MAU_PHONG_XA_SUCCESS',
   TAO_MAU_PHONG_XA: '@SETTING/TAO_MAU_PHONG_XA',
   XOA_MAU_PHONG_XA: '@SETTING/XOA_MAU_PHONG_XA',
+  BAN_DO_NEN: '@SETTING/BAN_DO_NEN',
 };
 
 const getFormField = createAction(settingTypes.GET_FORM_FIELD);
@@ -93,10 +94,15 @@ const initialState = {
     current_page: 0,
     last_page: 1,
   },
+  banDoNen: []
 };
 
 export const settingReducers = handleActions(
   {
+    [settingTypes.BAN_DO_NEN]: (state, action) => ({
+      ...state,
+      banDoNen: action.payload,
+    }),
     [settingTypes.LAY_MAU_PHONG_XA_SUCCESS]: (state, action) => ({
       ...state,
       mauPhongXas: action.payload,

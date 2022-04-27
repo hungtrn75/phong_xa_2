@@ -1,15 +1,15 @@
 //@ts-nocheck
-import MapboxGL from '@react-native-mapbox-gl/maps';
-import * as turf from '@turf/turf';
-import React, {useCallback, useMemo, useState} from 'react';
-import isEqual from 'react-fast-compare';
-import {RELEASE_ENDPOINT} from '../../../constants';
-import colors from '../../../theme/colors';
-import {isValidCoordinate} from '../../../utils/helper';
-import styles from '../map.styles';
+import MapboxGL from "@react-native-mapbox-gl/maps";
+import * as turf from "@turf/turf";
+import React, { useCallback, useMemo } from "react";
+import isEqual from "react-fast-compare";
+import { RELEASE_ENDPOINT } from "../../../constants";
+import colors from "../../../theme/colors";
+import { isValidCoordinate } from "../../../utils/helper";
+import styles from "../map.styles";
 
 MapboxGL.setAccessToken(
-  'pk.eyJ1IjoiaHV1bmdoaXBoYW0iLCJhIjoiY2pseXg2ZTl0MXRkdDN2b2J5bzFpbmlhZSJ9.cChkzU6jLVXx4v75qo_dfQ',
+  "pk.eyJ1IjoiaHV1bmdoaXBoYW0iLCJhIjoiY2pseXg2ZTl0MXRkdDN2b2J5bzFpbmlhZSJ9.cChkzU6jLVXx4v75qo_dfQ",
 );
 
 const MapRenderer = React.forwardRef(
@@ -33,30 +33,28 @@ const MapRenderer = React.forwardRef(
     },
     ref,
   ) => {
-    const {map, camera} = ref;
+    const { map, camera } = ref;
     const renderTile1 = () => (
       <MapboxGL.RasterSource
         id="rasterSource"
         tileUrlTemplates={[
-          'https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+          activeTitle.link,
         ]}
         tileSize={256}>
         <MapboxGL.RasterLayer
           id="rasterLayer"
           sourceLayerID="rasterSource"
-          style={{rasterOpacity: 1}}
+          style={{ rasterOpacity: 1 }}
           layerIndex={110}
         />
       </MapboxGL.RasterSource>
     );
 
-    // console.log(JSON.stringify(renderCollection));
-    // console.log(layers);
     const mapboxImages = useMemo(() => {
       let images = {};
       layers.map(el => {
         if (el.meta?.icon) {
-          images[el.meta.icon] = {uri: `${RELEASE_ENDPOINT}${el.meta.icon}`};
+          images[el.meta.icon] = { uri: `${RELEASE_ENDPOINT}${el.meta.icon}` };
         }
       });
       return images;
@@ -88,26 +86,26 @@ const MapRenderer = React.forwardRef(
     const renderLayer = useCallback(() => {
       return layers.map((el, id) => {
         switch (el.shape_type) {
-          case 'POLYGONE':
+          case "POLYGONE":
             return (
               <MapboxGL.Animated.FillLayer
                 id={`polygon_${id}`}
                 key={`polygon_${id}`}
                 style={{
-                  fillColor: 'blue',
+                  fillColor: "blue",
                   fillOpacity: 0.2,
                 }}
-                filter={['==', 'layer_id', el.id]}
+                filter={["==", "layer_id", el.id]}
               />
             );
-          case 'POINT':
+          case "POINT":
             if (el.color)
               return (
                 <MapboxGL.CircleLayer
                   id={`centerpoint_${id}`}
-                  filter={['all', ['==', 'layer_id', el.id]]}
+                  filter={["all", ["==", "layer_id", el.id]]}
                   key={`centerpoint_${id}`}
-                  style={{...mapboxStyles.c1, circleColor: el.color}}
+                  style={{ ...mapboxStyles.c1, circleColor: el.color }}
                 />
               );
             if (el?.meta?.icon) {
@@ -116,7 +114,7 @@ const MapRenderer = React.forwardRef(
                   id={`point_${id}`}
                   layerIndex={120}
                   key={`point_${id}`}
-                  filter={['==', 'layer_id', el.id]}
+                  filter={["==", "layer_id", el.id]}
                   style={mapboxStyles.s1}
                 />
               );
@@ -124,7 +122,7 @@ const MapRenderer = React.forwardRef(
             return (
               <MapboxGL.CircleLayer
                 id={`no_asset_point_${id}`}
-                filter={['all', ['==', 'layer_id', el.id]]}
+                filter={["all", ["==", "layer_id", el.id]]}
                 key={`no_asset_point_${id}`}
                 style={mapboxStyles.c2}
               />
@@ -135,7 +133,7 @@ const MapRenderer = React.forwardRef(
                 id={`point_${id}`}
                 layerIndex={1}
                 key={`point_${id}`}
-                filter={['==', 'layer_id', -1]}
+                filter={["==", "layer_id", -1]}
                 style={mapboxStyles.s2}
               />
             );
@@ -148,7 +146,7 @@ const MapRenderer = React.forwardRef(
         ref={map}
         style={styles.map}
         pitchEnabled={false}
-        styleURL={'http://molietsi.imagetrekk.com/static/vietnam-vector.json'}
+        styleURL={(activeTitle?.type === "vector") ? `${RELEASE_ENDPOINT}${activeTitle.link}` : "mapbox://styles/hungtrn75/ckoweqyd60icq18pc2h3ie7jg"}
         logoEnabled={false}
         attributionEnabled={false}
         onPress={onMapPress}
@@ -166,55 +164,55 @@ const MapRenderer = React.forwardRef(
           followUserLocation={false}
           centerCoordinate={initCamera.centerCoordinate}
         />
-        {baseMap[activeTitle].type === 'raster' ? renderTile1() : null}
+        {activeTitle?.type === "raster" ? renderTile1() : null}
         <MapboxGL.Images images={mapboxImages} />
         <MapboxGL.ShapeSource
           id="featureCollection"
           shouldRasterizeIOS
-          hitbox={{width: 20, height: 20}}
+          hitbox={{ width: 20, height: 20 }}
           shape={renderCollection}>
           {renderLayer()}
         </MapboxGL.ShapeSource>
         <MapboxGL.ShapeSource
           id="pendingFeatureCollection"
           shouldRasterizeIOS
-          hitbox={{width: 20, height: 20}}
+          hitbox={{ width: 20, height: 20 }}
           shape={pendingCollection}>
           <MapboxGL.CircleLayer
             key={`null_point`}
             id={`null_point`}
-            filter={['==', 'layer_id', -2]}
+            filter={["==", "layer_id", -2]}
             style={mapboxStyles.circlePendingLayer}
           />
           <MapboxGL.FillLayer
             id={`polygon_pending`}
             key={`polygon_pending`}
             style={mapboxStyles.fillPendingLayer}
-            filter={['==', 'layer_id', -3]}
+            filter={["==", "layer_id", -3]}
           />
         </MapboxGL.ShapeSource>
         <MapboxGL.ShapeSource
           id="draftFeatureCollection"
           shouldRasterizeIOS
-          hitbox={{width: 20, height: 20}}
+          hitbox={{ width: 20, height: 20 }}
           shape={draftCollection}>
           <MapboxGL.CircleLayer
             key={`null_point_2`}
             id={`null_point_2`}
-            filter={['==', 'layer_id', -4]}
+            filter={["==", "layer_id", -4]}
             style={mapboxStyles.circlePendingLayer}
           />
           <MapboxGL.FillLayer
             id={`polygon_pending_2`}
             key={`polygon_pending_2`}
             style={mapboxStyles.fillDraftLayer}
-            filter={['==', 'layer_id', -5]}
+            filter={["==", "layer_id", -5]}
           />
         </MapboxGL.ShapeSource>
         <MapboxGL.ShapeSource
           id="mauPhongXaSource"
           shouldRasterizeIOS
-          hitbox={{width: 20, height: 20}}
+          hitbox={{ width: 20, height: 20 }}
           shape={pxShape}>
           <MapboxGL.CircleLayer
             key={`mauPhongXaLayer`}
@@ -223,16 +221,16 @@ const MapRenderer = React.forwardRef(
           />
         </MapboxGL.ShapeSource>
         <MapboxGL.ShapeSource id="shapeSourceTools" shape={layer}>
-          {mode === 'polygon' ? (
+          {mode === "polygon" ? (
             <MapboxGL.FillLayer
-              id={'polygon'}
+              id={"polygon"}
               style={fillStyle}
               aboveLayerID="line"
               belowLayerID="current_loc"
             />
           ) : null}
           <MapboxGL.LineLayer
-            id={'line'}
+            id={"line"}
             style={lineStyle}
             sourceLayerID="shapeSourceTools"
           />
@@ -248,7 +246,7 @@ const MapRenderer = React.forwardRef(
 export default React.memo(MapRenderer, isEqual);
 
 const lineStyle = {
-  lineCap: 'round',
+  lineCap: "round",
   lineWidth: 2,
   lineOpacity: 0.8,
   lineColor: colors.BUTTON,
@@ -272,7 +270,7 @@ const mapboxStyles = {
     circleStrokeWidth: 1,
   },
   c2: {
-    circleColor: 'blue',
+    circleColor: "blue",
     circleOpacity: 1.0,
     circleRadius: 5.0,
     circleStrokeColor: colors.WHITE,
@@ -282,44 +280,44 @@ const mapboxStyles = {
     circleOpacity: 0.7,
     circleColor: colors.SECONDARY,
     circleRadius: 6.0,
-    circleStrokeColor: 'white',
+    circleStrokeColor: "white",
     circleStrokeWidth: 2,
   },
   circlePendingLayer: {
     circleOpacity: 0.7,
-    circleColor: 'red',
+    circleColor: "red",
     circleRadius: 6.0,
-    circleStrokeColor: 'white',
+    circleStrokeColor: "white",
     circleStrokeWidth: 2,
   },
   fillPendingLayer: {
-    fillColor: 'red',
+    fillColor: "red",
     fillOpacity: 0.7,
   },
 
   circleDraftLayer: {
     circleOpacity: 0.7,
-    circleColor: 'blue',
+    circleColor: "blue",
     circleRadius: 6.0,
-    circleStrokeColor: 'white',
+    circleStrokeColor: "white",
     circleStrokeWidth: 2,
   },
   fillDraftLayer: {
-    fillColor: 'blue',
+    fillColor: "blue",
     fillOpacity: 0.7,
   },
   annotation: {
-    circleColor: 'orange',
-    circleStrokeColor: 'white',
+    circleColor: "orange",
+    circleStrokeColor: "white",
     circleStrokeWidth: 2,
   },
   s1: {
-    iconImage: ['get', 'icon'],
+    iconImage: ["get", "icon"],
     iconAllowOverlap: false,
     iconSize: 0.2,
   },
   s2: {
-    iconImage: ['get', 'icon'],
+    iconImage: ["get", "icon"],
     iconAllowOverlap: false,
     iconSize: 0.2,
   },

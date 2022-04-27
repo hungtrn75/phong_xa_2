@@ -1,39 +1,38 @@
-import {useActionSheet} from '@expo/react-native-action-sheet';
+import { useActionSheet } from "@expo/react-native-action-sheet";
 //@ts-nocheck
-import MapboxGL from '@react-native-mapbox-gl/maps';
-import {area, length, lineString, polygon} from '@turf/turf';
-import React, {useEffect, useMemo, useRef, useState} from 'react';
-import {Alert} from 'react-native';
-import {showMessage} from 'react-native-flash-message';
-import {useTiming} from 'react-native-redash';
-import {SafeAreaView} from 'react-native-safe-area-context';
-import {connect} from 'react-redux';
-import {bindActionCreators} from 'redux';
-import {offlineActions} from '../../redux/state/offline_redux';
-import {settingsActions} from '../../redux/state/setting_redux';
-import {ShareStyles} from '../../theme';
-import {requestLocationPermisstionsAndroid} from '../../utils/permission';
-import BanDoNen from './components/ban_do_nen';
-import DanhDau, {DanhSachDanhDau} from './components/danh_dau';
-import DoiTuongChuaDuyet from './components/doi_tuong_chua_duyet';
-import DoDac from './components/do_dac';
-import DuLieuOffline from './components/du_lieu_offline';
-import LeftTools from './components/left_tools';
-import Lop from './components/lop';
-import MapPack from './components/map_pack';
-import MapRenderer from './components/map_render';
-import MauPhongXa from './components/mau_phong_xa/MauPhongXa';
-import OfflinePacks from './components/offline_packs';
-import RightTools from './components/right_tools';
-import ThemMoiDoiTuong from './components/them_moi_doi_tuong';
-import ViTri from './components/vi_tri';
+import MapboxGL from "@react-native-mapbox-gl/maps";
+import { area, length, lineString, polygon } from "@turf/turf";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { showMessage } from "react-native-flash-message";
+import { useTiming } from "react-native-redash";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { connect } from "react-redux";
+import { bindActionCreators } from "redux";
+import { offlineActions } from "../../redux/state/offline_redux";
+import { settingsActions } from "../../redux/state/setting_redux";
+import { ShareStyles } from "../../theme";
+import { requestLocationPermisstionsAndroid } from "../../utils/permission";
+import BanDoNen from "./components/ban_do_nen";
+import DanhDau, { DanhSachDanhDau } from "./components/danh_dau";
+import DoiTuongChuaDuyet from "./components/doi_tuong_chua_duyet";
+import DoDac from "./components/do_dac";
+import DuLieuOffline from "./components/du_lieu_offline";
+import LeftTools from "./components/left_tools";
+import Lop from "./components/lop";
+import MapPack from "./components/map_pack";
+import MapRenderer from "./components/map_render";
+import MauPhongXa from "./components/mau_phong_xa/MauPhongXa";
+import OfflinePacks from "./components/offline_packs";
+import RightTools from "./components/right_tools";
+import ThemMoiDoiTuong from "./components/them_moi_doi_tuong";
+import ViTri from "./components/vi_tri";
 
 MapboxGL.setAccessToken(
-  'pk.eyJ1IjoiaHV1bmdoaXBoYW0iLCJhIjoiY2pseXg2ZTl0MXRkdDN2b2J5bzFpbmlhZSJ9.cChkzU6jLVXx4v75qo_dfQ',
+  "pk.eyJ1IjoiaHV1bmdoaXBoYW0iLCJhIjoiY2pseXg2ZTl0MXRkdDN2b2J5bzFpbmlhZSJ9.cChkzU6jLVXx4v75qo_dfQ",
 );
 
 const initPack = {
-  name: '',
+  name: "",
   offlineRegion: null,
   offlineRegionStatus: null,
   visible: false,
@@ -59,7 +58,7 @@ const initVisible2 = {
 
 const initDanhDau = {
   visible: false,
-  name: '',
+  name: "",
   image: null,
   isEdit: false,
 };
@@ -67,41 +66,42 @@ const initDanhDau = {
 const mobileForms = [
   {
     id: 1,
-    name: 'Dạng vùng',
+    name: "Dạng vùng",
     layer: {
-      shape_type: 'POLYGONE',
+      shape_type: "POLYGONE",
     },
   },
   {
     id: 2,
-    name: 'Dạng điểm',
+    name: "Dạng điểm",
     layer: {
-      shape_type: 'POINT',
+      shape_type: "POINT",
     },
   },
 ];
 
 const Map = ({
-  navigation,
-  chuGiais,
-  forms,
-  offlineData,
-  layers,
-  featureCollectionMock,
-  pendingFeatures,
-  taoMoiDanhDau,
-  chinhSuaDanhDau,
-  xoaDanhDau,
-  bookmarks,
-  refreshData,
-  syncOffline,
-  deleteLayer,
-  dCollection,
-  pCollection,
-  deleteOffline,
-  mauPhongXas,
-}) => {
-  const {showActionSheetWithOptions} = useActionSheet();
+               navigation,
+               chuGiais,
+               forms,
+               offlineData,
+               layers,
+               featureCollectionMock,
+               pendingFeatures,
+               taoMoiDanhDau,
+               chinhSuaDanhDau,
+               xoaDanhDau,
+               bookmarks,
+               refreshData,
+               syncOffline,
+               deleteLayer,
+               dCollection,
+               pCollection,
+               deleteOffline,
+               mauPhongXas,
+               banDoNens,
+             }) => {
+  const { showActionSheetWithOptions } = useActionSheet();
   //Refs
   const camera = useRef(null);
   const map = useRef(null);
@@ -114,7 +114,7 @@ const Map = ({
   let [packs, setPacks] = useState([]);
   //Draw tools
   let [layer, setLayer] = useState({
-    type: 'FeatureCollection',
+    type: "FeatureCollection",
     features: [],
   });
   let [mode, setMode] = useState();
@@ -122,19 +122,19 @@ const Map = ({
   let valueArea = useRef(null);
   let toggle = useRef(false);
   let spaceRef = useRef(null);
-  let [unitLine, setUnitLine] = useState('Mét');
-  let [unitArea, setUnitArea] = useState('Mét vuông');
+  let [unitLine, setUnitLine] = useState("Mét");
+  let [unitArea, setUnitArea] = useState("Mét vuông");
   let [lopDoiTuong, setLopDoituong] = useState([]);
   //
   let [mapAction, setMapAction] = useState(true); ///asdjasjdias
   let [visible, setVisible] = useState(initVisible);
   let [visible2, setVisible2] = useState(initVisible2);
-  let [danhDau, setDanhDau] = useState({...initDanhDau});
-  let [activeTitle, setActiveTile] = useState(0);
+  let [danhDau, setDanhDau] = useState({ ...initDanhDau });
+  let [activeTitle, setActiveTile] = useState(banDoNens.length ? banDoNens[0] : null);
   let [prevObjects, setPrevObjects] = useState([]);
   let [currentLoc, setcurrentLoc] = useState({
-    lat: '',
-    lon: '',
+    lat: "",
+    lon: "",
   });
 
   const memoPx = useRef(null);
@@ -143,7 +143,7 @@ const Map = ({
   let location = useRef(null);
 
   useEffect(() => {
-    setPrevObjects(layers.map(el => ({...el, checked: false})));
+    setPrevObjects(layers.map(el => ({ ...el, checked: false })));
   }, [layers]);
 
   useEffect(() => {
@@ -168,7 +168,7 @@ const Map = ({
     setMapAction(true);
   };
 
-  const transition = useTiming(mapAction, {duration: 400});
+  const transition = useTiming(mapAction, { duration: 400 });
 
   //MAP OFFLINE
   useEffect(() => {
@@ -189,28 +189,28 @@ const Map = ({
   };
 
   const toggleLop =
-    ({item, index}) =>
-    () => {
-      prevObjects[index].checked = !prevObjects[index].checked;
-      prevObjects = [...prevObjects];
-      if (!prevObjects[index].checked) {
-        whiteList = whiteList.filter(el => el !== item.id);
-      } else {
-        whiteList = [...whiteList, item.id];
-      }
-      setWhiteList([...whiteList]);
-    };
+    ({ item, index }) =>
+      () => {
+        prevObjects[index].checked = !prevObjects[index].checked;
+        prevObjects = [...prevObjects];
+        if (!prevObjects[index].checked) {
+          whiteList = whiteList.filter(el => el !== item.id);
+        } else {
+          whiteList = [...whiteList, item.id];
+        }
+        setWhiteList([...whiteList]);
+      };
   //GETTERS
   const getLineString = anno => ({
-    type: 'FeatureCollection',
+    type: "FeatureCollection",
     features: [
       {
-        type: 'Feature',
+        type: "Feature",
         properties: {},
         geometry: {
-          type: 'LineString',
+          type: "LineString",
           coordinates:
-            mode == 'line'
+            mode == "line"
               ? anno.coordinates
               : [...anno.coordinates, anno.coordinates[0]],
         },
@@ -220,7 +220,7 @@ const Map = ({
 
   const renderCollection = useMemo(
     () => ({
-      type: 'FeatureCollection',
+      type: "FeatureCollection",
       features: [
         ...featureCollectionMock.features.filter(el => {
           if (
@@ -235,26 +235,26 @@ const Map = ({
     [featureCollectionMock, whiteList],
   );
   // MAP ACTIONS
-  const _onMapPress = ({geometry: {coordinates: coor}}) => {
+  const _onMapPress = ({ geometry: { coordinates: coor } }) => {
     currentLoc = {
-      lat: coor[1].toFixed(4) + '',
-      lon: coor[0].toFixed(4) + '',
+      lat: coor[1].toFixed(4) + "",
+      lon: coor[0].toFixed(4) + "",
     };
     if (annotations.activeIndex !== null) {
       annotations.coordinates[annotations.activeIndex] = coor;
       const lineFeature = getLineString(annotations);
-      annotations = {...annotations, activeIndex: null};
-      setLayer({...lineFeature});
+      annotations = { ...annotations, activeIndex: null };
+      setLayer({ ...lineFeature });
     } else if (mode) {
-      if (mode === 'point') {
+      if (mode === "point") {
         annotations.coordinates[0] = coor;
       } else annotations.coordinates.push(coor);
       const lineFeature = getLineString(annotations);
 
       if (annotations.coordinates.length > 1) {
-        if (mode == 'line') {
+        if (mode == "line") {
           let line = lineString(annotations.coordinates);
-          let size = length(line, {units: 'meters'});
+          let size = length(line, { units: "meters" });
           value.current = size;
         } else {
           if (annotations.coordinates.length > 2) {
@@ -268,9 +268,9 @@ const Map = ({
           }
         }
         // layer = {...lineFeature};
-        setLayer({...lineFeature});
+        setLayer({ ...lineFeature });
       }
-      setAnnitation({...annotations});
+      setAnnitation({ ...annotations });
     } else {
       setcurrentLoc(currentLoc);
     }
@@ -288,19 +288,19 @@ const Map = ({
 
   const chinhSuaLop = item => () => {
     spaceRef.current = null;
-    setVisible({...initVisible});
-    if (item.geometry.type === 'Polygon') {
-      setMode('polygon');
+    setVisible({ ...initVisible });
+    if (item.geometry.type === "Polygon") {
+      setMode("polygon");
       const newCoor = [...item.geometry.coordinates[0]];
       newCoor.pop();
       const newLayer = {
-        type: 'FeatureCollection',
+        type: "FeatureCollection",
         features: [
           {
-            type: 'Feature',
+            type: "Feature",
             properties: {},
             geometry: {
-              type: 'LineString',
+              type: "LineString",
               coordinates: [...item.geometry.coordinates[0]],
             },
           },
@@ -324,8 +324,8 @@ const Map = ({
         ve: true,
       });
     }
-    if (item.geometry.type === 'Point') {
-      setMode('point');
+    if (item.geometry.type === "Point") {
+      setMode("point");
       valueArea.current = {
         layerId: 1,
         featureId: item.id,
@@ -350,7 +350,7 @@ const Map = ({
       activeIndex: null,
     });
     setLayer({
-      type: 'FeatureCollection',
+      type: "FeatureCollection",
       features: [],
     });
     valueArea.current = null;
@@ -365,19 +365,19 @@ const Map = ({
   const onSaveLayer = () => {
     let geometry;
 
-    if (mode === 'point') {
+    if (mode === "point") {
       if (annotations.coordinates.length === 0)
         return showMessage({
-          description: 'Bạn chưa chọn điểm',
-          message: 'Lớp đối tượng dạng điểm',
-          type: 'danger',
+          description: "Bạn chưa chọn điểm",
+          message: "Lớp đối tượng dạng điểm",
+          type: "danger",
         });
       geometry = {
-        type: 'Point',
+        type: "Point",
         coordinates: annotations.coordinates[0],
       };
     }
-    if (mode === 'polygon') {
+    if (mode === "polygon") {
       if (
         layer.features.length === 0 ||
         (layer.features.length &&
@@ -386,18 +386,18 @@ const Map = ({
         console.log(true);
 
         return showMessage({
-          description: 'Bạn chưa vẽ vùng',
-          message: 'Lớp đối tượng dạng vùng',
-          type: 'danger',
+          description: "Bạn chưa vẽ vùng",
+          message: "Lớp đối tượng dạng vùng",
+          type: "danger",
         });
       } else {
-        geometry = {...layer.features[0].geometry};
-        geometry.type = 'Polygon';
+        geometry = { ...layer.features[0].geometry };
+        geometry.type = "Polygon";
       }
     }
 
     if (lopDoiTuong.length) {
-      navigation.navigate('ADD_PLACE', {
+      navigation.navigate("ADD_PLACE", {
         formValues: {
           layer: lopDoiTuong[0],
           geometry,
@@ -415,7 +415,7 @@ const Map = ({
   };
 
   const onXoaHanhDongThemMoi = () => {
-    setVisible2({...initVisible2});
+    setVisible2({ ...initVisible2 });
     if (lopDoiTuong.length) setLopDoituong([]);
     onDeleteDraw();
   };
@@ -424,7 +424,7 @@ const Map = ({
     const zoom = map.current ? await map.current.getZoom() : 14;
     const center = map.current ? await map.current.getCenter() : [102, 21];
     const hide = () => {
-      setDanhDau({...initDanhDau});
+      setDanhDau({ ...initDanhDau });
     };
     if (danhDau.isEdit) {
       chinhSuaDanhDau({
@@ -459,10 +459,10 @@ const Map = ({
     }
     valueArea.current = null;
     spaceRef.current = null;
-    setVisible({...initVisible});
-    setVisible2({...initVisible2});
-    setDanhDau({...initDanhDau});
-    setPrevObjects(chuGiais.map(el => ({...el, checked: true})));
+    setVisible({ ...initVisible });
+    setVisible2({ ...initVisible2 });
+    setDanhDau({ ...initDanhDau });
+    setPrevObjects(chuGiais.map(el => ({ ...el, checked: true })));
     onDeleteDraw();
   };
 
@@ -489,7 +489,7 @@ const Map = ({
         onLocationUpdate={onLocationUpdate}
         showPosition={showPosition}
         location={currentLoc}
-        ref={{camera, map}}
+        ref={{ camera, map }}
         mauPhongXas={mauPhongXas}
       />
       <LeftTools
@@ -536,7 +536,7 @@ const Map = ({
         visible={visible.mapTileShow}
         activeTitle={activeTitle}
         setActiveTile={setActiveTile}
-        baseMap={baseMap}
+        baseMap={banDoNens}
         onSelectAction={onSelectAction}
       />
       {/* <ChuGiai
@@ -650,6 +650,7 @@ const mapStateToProps = state => ({
   bookmarks: state.settings.bookmarks,
   offlineData: state.offline.qs,
   mauPhongXas: state.settings.mauPhongXas.data,
+  banDoNens: state.settings.banDoNen,
 });
 
 const mapDispatchToProps = dispatch =>
@@ -671,26 +672,26 @@ export default connect(mapStateToProps, mapDispatchToProps)(Map);
 
 const baseMap = [
   {
-    title: 'Hình ảnh',
-    type: 'raster',
-    thumbnail: require('../../assets/images/satellite.png'),
-    link: 'https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    title: "Hình ảnh",
+    type: "raster",
+    thumbnail: require("../../assets/images/satellite.png"),
+    link: "https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
   },
   {
-    title: 'Đường phố',
-    type: 'vector',
-    thumbnail: require('../../assets/images/streets.png'),
+    title: "Đường phố",
+    type: "vector",
+    thumbnail: require("../../assets/images/streets.png"),
   },
 ];
 
 const initLayer = {
-  type: 'FeatureCollection',
+  type: "FeatureCollection",
   features: [
     {
-      type: 'Feature',
+      type: "Feature",
       properties: {},
       geometry: {
-        type: 'LineString',
+        type: "LineString",
         coordinates: [
           [0, 0],
           [0, 0],

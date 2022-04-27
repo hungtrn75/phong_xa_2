@@ -1,24 +1,24 @@
-import {useTheme} from '@react-navigation/native';
-import {Formik} from 'formik';
-import React from 'react';
-import {Keyboard, StyleSheet} from 'react-native';
-import {ScrollView} from 'react-native-gesture-handler';
-import {connect} from 'react-redux';
-import {bindActionCreators} from 'redux';
-import {authActions} from '../../redux/state/auth_redux';
-import {MaterialColors} from '../../theme/colors';
-import Block from '../../widgets/base/block';
-import Fab from '../../widgets/base/fab';
-import Input from '../../widgets/base/input';
-import Text from '../../widgets/base/text';
+import { useTheme } from "@react-navigation/native";
+import { Formik } from "formik";
+import React from "react";
+import { Keyboard, StyleSheet } from "react-native";
+import { ScrollView } from "react-native-gesture-handler";
+import { connect } from "react-redux";
+import { bindActionCreators } from "redux";
+import { authActions } from "../../redux/state/auth_redux";
+import { MaterialColors } from "../../theme/colors";
+import Block from "../../widgets/base/block";
+import Fab from "../../widgets/base/fab";
+import Input from "../../widgets/base/input";
+import Text from "../../widgets/base/text";
 
-const LoginPage = ({login, navigation}) => {
+const LoginPage = ({ login, navigation }) => {
   const passRef = React.useRef(null);
 
-  const {dark} = useTheme();
+  const { dark } = useTheme();
   React.useEffect(() => {
-    const unsubscribe = navigation.addListener('blur', () => {
-      console.log('blur');
+    const unsubscribe = navigation.addListener("blur", () => {
+      console.log("blur");
       Keyboard.dismiss();
     });
 
@@ -27,12 +27,12 @@ const LoginPage = ({login, navigation}) => {
 
   return (
     <Formik
-      initialValues={{phoneNumber: '', password: ''}}
+      initialValues={{ phoneNumber: "", password: "" }}
       onSubmit={(values, actions) => {
         console.log(values);
         login(values);
       }}>
-      {({handleSubmit, handleChange, values}) => (
+      {({ handleSubmit, handleChange, values }) => (
         <Block flex={1} style={styles.container}>
           <ScrollView
             showsVerticalScrollIndicator={false}
@@ -54,7 +54,7 @@ const LoginPage = ({login, navigation}) => {
                 label="Số điện thoại"
                 close
                 value={values.phoneNumber}
-                onChangeText={handleChange('phoneNumber')}
+                onChangeText={handleChange("phoneNumber")}
                 onSubmitEditing={() => {
                   //@ts-ignore
                   passRef.current.focus();
@@ -65,7 +65,7 @@ const LoginPage = ({login, navigation}) => {
                 label="Mật khẩu"
                 secure
                 value={values.password}
-                onChangeText={handleChange('password')}
+                onChangeText={handleChange("password")}
                 onSubmitEditing={handleSubmit}
               />
             </Block>
@@ -107,7 +107,7 @@ const styles = StyleSheet.create({
     // backgroundColor: MaterialColors.grey.val(100),
   },
   fab: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 30,
     right: 20,
   },

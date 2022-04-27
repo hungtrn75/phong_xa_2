@@ -1,8 +1,8 @@
-import {route} from '../constants';
-import axios from '../utils/axios';
+import { route } from "../constants";
+import axios from "../utils/axios";
 
 export const getForms = async () => {
-  const res = await axios.get(route.FORM_FIELD + '?has_properties=true');
+  const res = await axios.get(route.FORM_FIELD + "?has_properties=true");
   return res.data;
 };
 
@@ -13,7 +13,7 @@ export const getFormField = async formId => {
   return res.data;
 };
 
-export const getPendingFeatures = async (type = 'pending') => {
+export const getPendingFeatures = async (type = "pending") => {
   try {
     const res = await axios.get(`${route.CREATE_LAYER}?per_page=9999`);
     return res.data.data;
@@ -35,38 +35,38 @@ export const getBookmarks = async () => {
   }
 };
 
-export const getSubmittedForm = async ({layerId, featureId}) => {
+export const getSubmittedForm = async ({ layerId, featureId }) => {
   const res = await axios.get(
     `${route.SUBMITTED_FORM}/${layerId}/features/${featureId}?visible=true`,
   );
   return res.data.data;
 };
 
-export const createLayer = async ({type, values, geometry}, i = null) => {
+export const createLayer = async ({ type, values, geometry }, i = null) => {
   const res = await axios.post(
     type == 1 ? route.CREATE_LAYER : route.CREATE_LAYER_2,
     type == 1
       ? {
-          ...values,
-          geometry,
-        }
+        ...values,
+        geometry,
+      }
       : values,
   );
-  console.log(JSON.stringify(res.data, null, '\t'));
+  console.log(JSON.stringify(res.data, null, "\t"));
   return res.data;
 };
 
-export const updateLayer = async ({type, values, geometry}, layerId) => {
+export const updateLayer = async ({ type, values, geometry }, layerId) => {
   const res = await axios.patch(
     `${type == 1 ? route.CREATE_LAYER : route.CREATE_LAYER_2}/${layerId}`,
     type == 1
       ? {
-          ...values,
-          geometry,
-        }
+        ...values,
+        geometry,
+      }
       : values,
   );
-  console.log(JSON.stringify(res.data, null, '\t'));
+  console.log(JSON.stringify(res.data, null, "\t"));
   return Promise.resolve();
 };
 
@@ -75,34 +75,34 @@ export const deleteLayer = async layerId => {
     const res = await axios.delete(`mobileforms/${layerId}`);
     return res.data;
   } catch (error) {
-    console.log(error, {...error});
+    console.log(error, { ...error });
     return Promise.reject(error);
   }
 };
 
 export const createBookmark = async ({
-  latitude,
-  longtitude,
-  name,
-  zoom,
-  image,
-}) => {
+                                       latitude,
+                                       longtitude,
+                                       name,
+                                       zoom,
+                                       image,
+                                     }) => {
   const formData = new FormData();
-  formData.append('longtitude', longtitude);
-  formData.append('latitude', latitude);
-  formData.append('name', name);
-  formData.append('zoom', zoom);
+  formData.append("longtitude", longtitude);
+  formData.append("latitude", latitude);
+  formData.append("name", name);
+  formData.append("zoom", zoom);
   if (image) {
-    formData.append('image', {
+    formData.append("image", {
       uri: image.uri,
-      type: 'image/jpg',
+      type: "image/jpg",
       name: image.name,
     });
   }
 
   const config = {
     headers: {
-      'Content-Type': 'multipart/form-data',
+      "Content-Type": "multipart/form-data",
     },
   };
   const res = await axios.post(route.BOOKMARKS, formData, config);
@@ -110,28 +110,28 @@ export const createBookmark = async ({
 };
 
 export const updateBookmark = async ({
-  id,
-  latitude,
-  longtitude,
-  name,
-  zoom,
-  image,
-}) => {
+                                       id,
+                                       latitude,
+                                       longtitude,
+                                       name,
+                                       zoom,
+                                       image,
+                                     }) => {
   const formData = new FormData();
-  formData.append('longtitude', longtitude);
-  formData.append('latitude', latitude);
-  formData.append('name', name);
-  formData.append('zoom', zoom);
-  formData.append('_method', 'PATCH');
+  formData.append("longtitude", longtitude);
+  formData.append("latitude", latitude);
+  formData.append("name", name);
+  formData.append("zoom", zoom);
+  formData.append("_method", "PATCH");
   if (image && !image.id)
-    formData.append('image', {
+    formData.append("image", {
       uri: image.uri,
-      type: 'image/jpg',
+      type: "image/jpg",
       name: image.name,
     });
   const config = {
     headers: {
-      'Content-Type': 'multipart/form-data',
+      "Content-Type": "multipart/form-data",
     },
   };
   const res = await axios.post(`${route.BOOKMARKS}/${id}`, formData, config);
@@ -175,15 +175,15 @@ export const uploadMultiDocument = async (files, mobile_form_id) => {
     }
     return success;
   } catch (error) {
-    console.log(error, {...error});
+    console.log(error, { ...error });
     return Promise.reject(error);
   }
 };
 
-export const uploadDocument = async ({uri, name, type}, mobile_form_id) => {
+export const uploadDocument = async ({ uri, name, type }, mobile_form_id) => {
   const formData = new FormData();
-  formData.append('mobile_form_id', mobile_form_id);
-  formData.append('file', {
+  formData.append("mobile_form_id", mobile_form_id);
+  formData.append("file", {
     uri,
     type,
     name,
@@ -191,17 +191,17 @@ export const uploadDocument = async ({uri, name, type}, mobile_form_id) => {
 
   const config = {
     headers: {
-      'Content-Type': 'multipart/form-data',
+      "Content-Type": "multipart/form-data",
     },
   };
   return new Promise((resolve, reject) => {
     axios.post(route.UPLOAD_DOCUMENT, formData, config).then(
       response => {
         if (response.data?.data?.id) resolve(response.data.data.id);
-        else reject('asdjias');
+        else reject("asdjias");
       },
       error => {
-        console.log({...error});
+        console.log({ ...error });
         reject(error);
       },
     );
@@ -215,7 +215,7 @@ export const layDSMauPhongXa = async page => {
   return res.data;
 };
 
-export const capNhatMauPhongXa = async ({values, geometry, layerId}) => {
+export const capNhatMauPhongXa = async ({ values, geometry, layerId }) => {
   if (layerId) {
     const res = await axios.patch(`radiation-samples/${layerId}`, {
       ...values,
@@ -233,4 +233,15 @@ export const capNhatMauPhongXa = async ({values, geometry, layerId}) => {
 export const xoaMauPhongXa = async layerId => {
   const res = await axios.delete(`radiation-samples/${layerId}`);
   return res.data;
+};
+
+export const layBanDoNen = async () => {
+  try {
+    const res = await axios.get("basemap");
+    console.log(res.data);
+    return res.data?.data ?? [];
+  } catch (e) {
+    console.log(e);
+    return [];
+  }
 };
